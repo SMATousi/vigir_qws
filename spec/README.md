@@ -19,6 +19,7 @@ problem run on quantum annealers and on gate-based quantum hardware.
 | 06 | [Evaluation](06-evaluation.md) | Datasets, baselines, metrics, and acceptance criteria |
 | 07 | [Multi-class extension](07-multiclass-extension.md) | Planned extension from binary to K-class segmentation |
 | — | [Open questions](open-questions.md) | Decisions that are still open |
+| — | [Paper draft](paper-draft.md) | Theory-only short paper: Ising reductions, learning theorem, sampler-fidelity analysis |
 
 ## Decisions so far
 
