@@ -10,13 +10,14 @@ family works and how problems larger than the hardware are handled.
 |---------|--------|-----------|-----|
 | `exact` | Classical | minimize, sample (exact Boltzmann), marginals, log Z | Ground truth for N ≲ 25; unit tests |
 | `graphcut` | Classical | minimize (submodular only; MUST refuse when any $J<0$) | Exact MAP reference for ferromagnetic problems |
-| `qpbo` | Classical | minimize (partial) | Persistency preprocessing; frustrated MAP baseline |
+| `qpbo` | Classical | minimize (partial) | Persistency preprocessing; frustrated MAP baseline. **Not yet implemented** (roadmap 4.3) |
 | `sa` | Classical | minimize, sample | Simulated-annealing baseline |
 | `gibbs` | Classical | sample (persistent chains), polish | MCMC baseline; quantum-seeded polishing (doc 03 §4) |
 | `anneal_qpu` | Quantum annealing | minimize, sample | Primary quantum backend |
+| `anneal_sim` | Ocean SDK + classical sampler | minimize, sample | Exercises the full annealing interface (signs, ordering, metadata) without QPU access |
 | `anneal_hybrid` | Vendor hybrid solver | minimize | Large-problem reference; reported separately, never counted as a "pure QPU" result |
 | `qaoa_sim` | Gate-based, simulated | minimize, seed sampling | Development and small-N studies |
-| `qaoa_qpu` | Gate-based hardware | minimize, seed sampling | Small subproblems on real devices |
+| `qaoa_qiskit` | Gate-based (Qiskit; Aer simulator or hardware backend) | minimize, seed sampling | Small subproblems on real devices |
 
 Quantum SDK dependencies MUST be optional extras, so the classical core
 installs without them.

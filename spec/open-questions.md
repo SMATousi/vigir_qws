@@ -16,6 +16,9 @@ entry to *Resolved*.
 | Q7 | Should higher-order (region-level) LFs, such as "this box contains foreground", be supported through quadratization with ancilla qubits? | 01, 02 | Deferred to v2 |
 | Q8 | Is the downstream segmentation network part of this repo, or only an interface? | 00 §4, 03 §7 | Interface only |
 | Q9 | What is the license and the publication plan, and which comparison results must be reproducible for a paper? | 06 §4 | — |
+| Q10 | Which gate-based provider: IBM Quantum (Qiskit, the current code path), or another (IonQ, Quantinuum via their SDKs)? | 04 §3, 08 Phase 3 | IBM via Qiskit |
+| Q11 | Which D-Wave solver (Advantage or Advantage2), and are hybrid solvers allowed as a reported baseline? | 04 §2, 06 §4 | Advantage QPU; hybrid reported separately |
+| Q12 | Should `main` be the default branch and should the spec + code be merged there via a pull request? | — | Work stays on the feature branch until you decide |
 
 ## Resolved
 
