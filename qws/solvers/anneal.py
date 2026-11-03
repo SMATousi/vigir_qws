@@ -1,9 +1,8 @@
 """Quantum-annealing backend through the D-Wave Ocean SDK (doc 04 §2).
 
-``AnnealingSolver`` wraps any dimod sampler. It is tested with a simulated Ocean
-sampler standing in for the QPU. ``AnnealingSolver.dwave_qpu()`` builds the
-real-hardware stack. That path needs a D-Wave Leap token (``DWAVE_API_TOKEN``) and is
-untested against real devices: see spec doc 08, Phase 3.
+``AnnealingSolver`` wraps any (unstructured) dimod sampler, e.g. Ocean's classical
+SimulatedAnnealingSampler as a stand-in. The real QPU path, with explicit embedding,
+an embedding cache and parallel embedding, is :mod:`qws.solvers.qpu`.
 """
 
 from __future__ import annotations
@@ -43,17 +42,6 @@ class AnnealingSolver(Solver):
         self.chain_break_threshold = chain_break_threshold
         self.sample_kwargs = sample_kwargs
         self._embeddings: dict[str, Any] = {}
-
-    # ------------------------------------------------------------------ factory for real hardware
-    @classmethod
-    def dwave_qpu(cls, solver: str | dict | None = None, **kw: Any) -> "AnnealingSolver":  # pragma: no cover
-        """Real D-Wave QPU with embedding cache. Needs credentials (DWAVE_API_TOKEN)."""
-        from dwave.system import DWaveSampler, EmbeddingComposite
-
-        child = DWaveSampler(solver=solver) if solver else DWaveSampler()
-        props = child.properties
-        return cls(EmbeddingComposite(child), h_range=tuple(props["h_range"]), j_range=tuple(props["j_range"]),
-                   chain_strength_factor=kw.pop("chain_strength_factor", 2.0), **kw)
 
     # ------------------------------------------------------------------ scaling
     def _ranges(self) -> tuple[tuple[float, float] | None, tuple[float, float] | None]:

@@ -5,20 +5,32 @@ from __future__ import annotations
 import numpy as np
 
 
-def iou(pred: np.ndarray, gt: np.ndarray) -> float:
-    """Foreground IoU for masks in {-1,+1} (or {0,1})."""
+def _valid(pred: np.ndarray, gt: np.ndarray, ignore_zero: bool) -> tuple[np.ndarray, np.ndarray]:
+    """Drop pixels where gt == 0 (Oxford-IIIT Pet trimap boundary) when requested."""
+    p, g = np.asarray(pred), np.asarray(gt)
+    if ignore_zero:
+        keep = g != 0
+        return p[keep], g[keep]
+    return p, g
+
+
+def iou(pred: np.ndarray, gt: np.ndarray, ignore_zero: bool = False) -> float:
+    """Foreground IoU for masks in {-1,+1} (or {0,1}); with ``ignore_zero``, gt == 0 is excluded."""
+    pred, gt = _valid(pred, gt, ignore_zero)
     p, g = np.asarray(pred) > 0, np.asarray(gt) > 0
     union = np.logical_or(p, g).sum()
     return float(np.logical_and(p, g).sum() / union) if union else 1.0
 
 
-def dice(pred: np.ndarray, gt: np.ndarray) -> float:
+def dice(pred: np.ndarray, gt: np.ndarray, ignore_zero: bool = False) -> float:
+    pred, gt = _valid(pred, gt, ignore_zero)
     p, g = np.asarray(pred) > 0, np.asarray(gt) > 0
     denom = p.sum() + g.sum()
     return float(2 * np.logical_and(p, g).sum() / denom) if denom else 1.0
 
 
-def accuracy(pred: np.ndarray, gt: np.ndarray) -> float:
+def accuracy(pred: np.ndarray, gt: np.ndarray, ignore_zero: bool = False) -> float:
+    pred, gt = _valid(pred, gt, ignore_zero)
     return float(np.mean((np.asarray(pred) > 0) == (np.asarray(gt) > 0)))
 
 
@@ -26,8 +38,9 @@ def brier(prob_fg: np.ndarray, gt: np.ndarray) -> float:
     return float(np.mean((np.asarray(prob_fg) - (np.asarray(gt) > 0)) ** 2))
 
 
-def ece(prob_fg: np.ndarray, gt: np.ndarray, bins: int = 10) -> float:
+def ece(prob_fg: np.ndarray, gt: np.ndarray, bins: int = 10, ignore_zero: bool = False) -> float:
     """Expected calibration error of P(foreground)."""
+    prob_fg, gt = _valid(prob_fg, gt, ignore_zero)
     p = np.asarray(prob_fg, dtype=float).reshape(-1)
     g = (np.asarray(gt) > 0).reshape(-1).astype(float)
     edges = np.linspace(0, 1, bins + 1)

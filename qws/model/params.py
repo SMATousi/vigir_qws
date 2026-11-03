@@ -1,4 +1,12 @@
-"""Label-model parameters (symmetric potentials, paper Definition 1)."""
+"""Label-model parameters.
+
+Unary LF potential (class-conditional form, spec doc 09 §3):
+
+    psi_j(λ, y) = alpha_j 1[λ != 0] + theta_j λ y + omega_j 1[λ != 0] y + zeta_j λ.
+
+The four features span every 3x2 table up to the row psi(0, y), which the class bias b
+absorbs. omega = zeta = 0 is the symmetric model of the paper's Definition 1.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +14,7 @@ from dataclasses import dataclass, field, fields, replace
 
 import numpy as np
 
-_VECTOR_FIELDS = ("alpha", "theta", "alphaP", "thetaP", "gamma")
+_VECTOR_FIELDS = ("alpha", "theta", "alphaP", "thetaP", "gamma", "omega", "zeta")
 _SCALAR_FIELDS = ("b", "beta")
 
 
@@ -18,6 +26,8 @@ class LabelModelParams:
         alpha, theta: Propensity and accuracy of each unary LF, shape ``(m,)``.
         alphaP, thetaP: Propensity and accuracy of each pairwise LF, shape ``(q,)``.
         gamma: Strength of each correlation clique in ``cliques``.
+        omega: Class-dependent coverage of each unary LF (votes more often on one class).
+        zeta: Vote bias of each unary LF (prefers voting +1 or -1 regardless of y).
         b: Class bias. beta: Smoothness strength (>= 0).
         cliques: Groups of correlated unary LFs (each of size >= 2, disjoint). LFs not
             listed form singleton cliques. Feature: number of agreeing non-abstaining pairs.
@@ -31,10 +41,17 @@ class LabelModelParams:
     b: float = 0.0
     beta: float = 0.0
     cliques: tuple[tuple[int, ...], ...] = ()
+    omega: np.ndarray = field(default_factory=lambda: np.zeros(0))
+    zeta: np.ndarray = field(default_factory=lambda: np.zeros(0))
 
     def __post_init__(self) -> None:
         for name in _VECTOR_FIELDS:
             setattr(self, name, np.asarray(getattr(self, name), dtype=float).reshape(-1).copy())
+        for name in ("omega", "zeta"):
+            if getattr(self, name).size == 0:
+                setattr(self, name, np.zeros(self.theta.shape[0]))
+            elif getattr(self, name).shape != self.theta.shape:
+                raise ValueError(f"{name} must have one entry per unary LF")
         self.b, self.beta = float(self.b), float(self.beta)
         self.cliques = tuple(tuple(int(j) for j in c) for c in self.cliques)
         if self.alpha.shape != self.theta.shape or self.alphaP.shape != self.thetaP.shape:
@@ -54,6 +71,11 @@ class LabelModelParams:
     @property
     def q(self) -> int:
         return int(self.thetaP.shape[0])
+
+    @property
+    def is_symmetric(self) -> bool:
+        """True when omega = zeta = 0 (paper Definition 1)."""
+        return bool(np.all(self.omega == 0) and np.all(self.zeta == 0))
 
     @classmethod
     def init(cls, m: int, q: int = 0, theta0: float = 0.5, thetaP0: float = 0.5, b: float = 0.0, beta: float = 0.0,

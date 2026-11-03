@@ -129,23 +129,42 @@ def counts_to_spins(counts: dict[str, int], n: int) -> tuple[np.ndarray, np.ndar
 
 
 class QAOAQiskit(Solver):
-    """QAOA executed as a Qiskit circuit on any backend with ``run`` (default: Aer).
+    """QAOA executed as a Qiskit circuit.
 
-    Angles come from the statevector optimizer when n is small; otherwise a linear
-    ramp is used (angle transfer). Real IBM hardware needs an IBM Quantum account and
-    is untested (spec doc 08, Phase 3).
+    Two execution modes:
+
+    * ``backend.run`` (default: the Aer simulator), for local simulation;
+    * a **SamplerV2 primitive** (``sampler=``), which is how IBM Quantum hardware is
+      accessed today (``qiskit_ibm_runtime.SamplerV2``). When a ``backend`` is also given,
+      the circuit is first transpiled to that backend's instruction-set architecture (ISA).
+      The SamplerV2 path is tested offline with ``qiskit.primitives.StatevectorSampler``.
+
+    Angles come from the statevector optimizer when n is small; otherwise a linear ramp
+    is used (angle transfer). Real IBM hardware needs an account (spec doc 08, 3.4).
     """
 
     name = "qaoa_qiskit"
     capabilities = frozenset({"minimize", "sample"})
 
     def __init__(self, backend: Any | None = None, p_layers: int = 2, optimization_level: int = 1,
-                 seed: int | None = None):
+                 seed: int | None = None, sampler: Any | None = None):
         self.backend = backend
+        self.sampler = sampler
         self.p_layers = p_layers
         self.optimization_level = optimization_level
         self.seed = seed
         self._sim = QAOASimulator(p_layers=p_layers, seed=seed)
+
+    @classmethod
+    def ibm(cls, backend_name: str | None = None, **kw: Any) -> "QAOAQiskit":  # pragma: no cover - needs account
+        """IBM Quantum via qiskit-ibm-runtime SamplerV2 (credentials from the saved account
+        or QISKIT_IBM_TOKEN). ``backend_name`` defaults to the least busy real device."""
+        from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2
+
+        service = QiskitRuntimeService()
+        backend = service.backend(backend_name) if backend_name else service.least_busy(operational=True,
+                                                                                        simulator=False)
+        return cls(backend=backend, sampler=SamplerV2(mode=backend), **kw)
 
     def _backend(self):
         if self.backend is None:
@@ -154,18 +173,28 @@ class QAOAQiskit(Solver):
             self.backend = AerSimulator(seed_simulator=self.seed)
         return self.backend
 
-    def _run(self, p: IsingProblem, shots: int, angles: np.ndarray | None) -> SampleSet:
+    def _counts(self, qc, shots: int) -> tuple[dict[str, int], dict[str, Any]]:
         from qiskit import transpile
 
+        if self.sampler is not None:
+            if self.backend is not None:  # ISA circuit for real hardware
+                qc = transpile(qc, self.backend, optimization_level=self.optimization_level,
+                               seed_transpiler=self.seed)
+            result = self.sampler.run([qc], shots=shots).result()[0]
+            counts = result.data.meas.get_counts()  # measure_all() names the register "meas"
+            return counts, {"mode": "SamplerV2", "sampler": type(self.sampler).__name__, "depth": qc.depth(),
+                            "backend": str(self.backend) if self.backend is not None else None}
+        backend = self._backend()
+        qc = transpile(qc, backend, optimization_level=self.optimization_level, seed_transpiler=self.seed)
+        counts = backend.run(qc, shots=shots).result().get_counts()
+        return counts, {"mode": "backend.run", "backend": str(backend), "depth": qc.depth()}
+
+    def _run(self, p: IsingProblem, shots: int, angles: np.ndarray | None) -> SampleSet:
         if angles is None:
             angles = self._sim.optimize_angles(p)[0] if p.n <= self._sim.max_n else linear_ramp(self.p_layers)
-        backend = self._backend()
-        qc = transpile(qaoa_circuit(p, angles), backend, optimization_level=self.optimization_level,
-                       seed_transpiler=self.seed)
-        counts = backend.run(qc, shots=shots).result().get_counts()
+        counts, info = self._counts(qaoa_circuit(p, angles), shots)
         Y, c = counts_to_spins(counts, p.n)
-        return SampleSet.from_samples(p, Y, c, {"solver": self.name, "backend": str(backend),
-                                                "angles": np.asarray(angles).tolist(), "depth": qc.depth()},
+        return SampleSet.from_samples(p, Y, c, {"solver": self.name, "angles": np.asarray(angles).tolist(), **info},
                                       aggregate=True)
 
     def minimize(self, problems: Sequence[IsingProblem], shots: int = 1024, angles: np.ndarray | None = None,

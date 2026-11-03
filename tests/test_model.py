@@ -18,6 +18,7 @@ from qws.solvers import ExactSolver, all_spins
 def _unary_scores(params, Ls, y):
     """Unary-LF and clique log-potentials for a stack of vote matrices Ls (K, n, m)."""
     s = ((Ls != 0) * params.alpha).sum((1, 2)) + (Ls * y[None, :, None] * params.theta).sum((1, 2))
+    s = s + ((Ls != 0) * y[None, :, None] * params.omega).sum((1, 2)) + (Ls * params.zeta).sum((1, 2))
     for c, g in zip(params.cliques, params.gamma):
         sub = Ls[:, :, list(c)].reshape(-1, len(c))
         s = s + g * agreement_feature(sub).reshape(Ls.shape[0], -1).sum(1)
@@ -114,11 +115,13 @@ def test_closed_form_moments():
     mm = model_moments(params)
     z = 1 + 2 * np.exp(0.3) * np.cosh(0.9)
     assert mm.agree[0] == pytest.approx(2 * np.exp(0.3) * np.sinh(0.9) / z)
-    assert mm.cover[0] == pytest.approx(2 * np.exp(0.3) * np.cosh(0.9) / z)
+    assert mm.cover[0, 0] == pytest.approx(2 * np.exp(0.3) * np.cosh(0.9) / z)
+    assert mm.vote[1, 0] == pytest.approx(-mm.vote[0, 0]) and mm.cover[1, 0] == pytest.approx(mm.cover[0, 0])
+    assert mm.prior_field == pytest.approx(0.0)
     zp = 1 + 2 * np.exp(-0.4) * np.cosh(0.6)
     assert mm.agreeP[0] == pytest.approx(2 * np.exp(-0.4) * np.sinh(0.6) / zp)
     # conditional accuracy given a vote is sigmoid(2 theta)
-    assert mm.agree[0] / mm.cover[0] == pytest.approx(np.tanh(0.9))
+    assert mm.agree[0] / mm.cover[0, 0] == pytest.approx(np.tanh(0.9))
 
 
 def test_prior_independent_of_lf_params(tiny):
@@ -146,3 +149,59 @@ def test_warm_start_recovers_independent_model():
     p = warm_start([(im.lfo, im.sites) for im in ds], iters=600)
     np.testing.assert_allclose(p.theta, true.theta, atol=0.12)
     np.testing.assert_allclose(p.alpha, true.alpha, atol=0.12)
+
+
+@pytest.fixture
+def tiny_cc():
+    """Class-conditional unary LFs, one correlation clique, one pairwise LF."""
+    sites = grid_sites(np.array([[0.0, 0.3]]))  # 2 sites, 1 edge
+    params = LabelModelParams(alpha=[0.3, -0.2, 0.1], theta=[0.9, 0.4, 0.6], omega=[0.5, -0.3, 0.2],
+                              zeta=[-0.4, 0.2, 0.1], gamma=[0.3], cliques=((0, 2),), alphaP=[0.1], thetaP=[0.7],
+                              b=0.2, beta=0.6)
+    L0 = np.array([[1, 0, 1], [-1, -1, 0]], dtype=np.int8)
+    P0 = np.array([[-1]], dtype=np.int8)
+    return sites, params, LFOutputs(L0, P0)
+
+
+def test_class_conditional_posterior_and_prior_match_brute_force(tiny_cc):
+    sites, params, lfo = tiny_cc
+    Ys = all_spins(2)
+    s = np.array([joint_score(params, sites, lfo.L.astype(float), lfo.P.astype(float), y) for y in Ys])
+    _, post = ExactSolver().distribution(posterior_ising(params, lfo, sites))
+    np.testing.assert_allclose(post, np.exp(s - logsumexp(s)), atol=1e-12)
+    # prior marginal p(y): brute-force sum over all votes vs the prior Ising model (Proposition 2)
+    allL = np.array(list(itertools.product((-1, 0, 1), repeat=2 * 3)), dtype=float).reshape(-1, 2, 3)
+    allP = np.array(list(itertools.product((-1, 0, 1), repeat=1)), dtype=float).reshape(-1, 1, 1)
+    logp = []
+    for y in Ys:
+        s0 = params.b * y.sum() + params.beta * sites.weights @ (y[sites.edges[:, 0]] * y[sites.edges[:, 1]])
+        full = _unary_scores(params, allL, y)[:, None] + _pair_scores(params, sites, allP, y)[None, :]
+        logp.append(s0 + logsumexp(full))
+    brute = np.exp(np.array(logp) - logsumexp(logp))
+    _, prior = ExactSolver().distribution(prior_ising(params, sites))
+    np.testing.assert_allclose(prior, brute, atol=1e-12)
+    assert not params.is_symmetric
+
+
+def test_class_conditional_gradient_matches_finite_differences(tiny_cc):
+    sites, params, lfo = tiny_cc
+    ex = ExactSolver()
+    post = PosteriorMoments(*ex.moments(posterior_ising(params, lfo, sites)))
+    prior = PosteriorMoments(*ex.moments(prior_ising(params, sites)))
+    g = gradient(params, [(lfo, sites)], [post], [prior], learn_b=True, learn_beta=True).to_vector()
+    v = params.to_vector()
+    eps = 1e-5
+    L, P = lfo.L.astype(float), lfo.P.astype(float)
+    for k in range(v.size):
+        up, dn = v.copy(), v.copy()
+        up[k] += eps
+        dn[k] -= eps
+        fd = (brute_loglik(params.from_vector(up), sites, L, P) - brute_loglik(params.from_vector(dn), sites, L, P)) / (2 * eps)
+        assert g[k] == pytest.approx(fd, abs=1e-6), k
+
+
+def test_gradient_requires_prior_when_class_conditional(tiny_cc):
+    sites, params, lfo = tiny_cc
+    post = PosteriorMoments(np.zeros(2), np.zeros(1))
+    with pytest.raises(ValueError):
+        gradient(params, [(lfo, sites)], [post])

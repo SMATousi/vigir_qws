@@ -1,7 +1,8 @@
 """Structured label model: Ising builders, model moments and gradients.
 
-Implements doc 01 §3 and the paper's Propositions 1–3 and Theorem 1 for symmetric
-potentials. Pairwise LFs vote on the site graph's edges (E_r = E, doc 08).
+Implements doc 01 §3 and the paper's Propositions 1–3, Lemma 1 and Theorem 1, extended
+to class-conditional unary potentials (spec doc 09 §3). Pairwise LFs are symmetric and
+vote on the site graph's edges (E_r = E, doc 08).
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from .params import LabelModelParams
 def posterior_ising(params: LabelModelParams, lfo: LFOutputs, sites: Sites, **meta) -> IsingProblem:
     """Posterior p(y | Λ, Π) as an Ising model (paper Proposition 1)."""
     _check_shapes(params, lfo, sites)
-    h = params.b + lfo.L.astype(float) @ params.theta
+    h = params.b + lfo.L.astype(float) @ params.theta + (lfo.L != 0).astype(float) @ params.omega
     J = params.beta * sites.weights
     if params.q:
         J = J + lfo.P.astype(float) @ params.thetaP
@@ -30,9 +31,11 @@ def posterior_ising(params: LabelModelParams, lfo: LFOutputs, sites: Sites, **me
 
 
 def prior_ising(params: LabelModelParams, sites: Sites, **meta) -> IsingProblem:
-    """Prior marginal p(y) (Proposition 3: LF parameters drop out for symmetric potentials)."""
-    return IsingProblem(np.full(sites.n, params.b), sites.edges, params.beta * sites.weights, 0.0, "prior",
-                        dict(meta))
+    """Prior marginal p(y) (Proposition 2). The LF terms add the field
+    sum_c 1/2 log(Z_c(+1)/Z_c(-1)) at every site; it vanishes for symmetric potentials
+    (Proposition 3). Pairwise LFs are symmetric, so they add no coupling."""
+    h = params.b + model_moments(params).prior_field
+    return IsingProblem(np.full(sites.n, h), sites.edges, params.beta * sites.weights, 0.0, "prior", dict(meta))
 
 
 def _check_shapes(params: LabelModelParams, lfo: LFOutputs, sites: Sites) -> None:
@@ -65,41 +68,68 @@ def all_cliques(params: LabelModelParams) -> list[tuple[tuple[int, ...], float]]
     return out
 
 
+def clique_logweights(params: LabelModelParams, c: tuple[int, ...], gamma: float
+                      ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Vote table of clique c and log-weights of each row given y = +1 and y = -1."""
+    idx = list(c)
+    table = _vote_table(len(c))
+    cover = (table != 0).astype(float)
+    base = cover @ params.alpha[idx] + table @ params.zeta[idx]
+    odd = table @ params.theta[idx] + cover @ params.omega[idx]
+    phi = agreement_feature(table) if len(c) > 1 else np.zeros(len(table))
+    return table, base + odd + gamma * phi, base - odd + gamma * phi, phi
+
+
+def _normalize(logw: np.ndarray) -> tuple[np.ndarray, float]:
+    mx = logw.max()
+    w = np.exp(logw - mx)
+    z = w.sum()
+    return w / z, float(mx + np.log(z))
+
+
 @dataclass(frozen=True)
 class ModelMoments:
-    """Per-site (unary) and per-edge (pairwise) expectations under the model.
+    """Conditional expectations of the LF statistics given the true label.
 
-    By symmetry (paper Proposition 3) none of these depend on the law of y.
+    Row 0 conditions on y = +1, row 1 on y = -1. For symmetric potentials,
+    vote[1] = -vote[0], cover[1] = cover[0] and feat[1] = feat[0], so model terms do not
+    depend on the law of y (Proposition 3).
     """
 
-    agree: np.ndarray       # E[Λ_j y], (m,)
-    cover: np.ndarray       # E[1(Λ_j != 0)], (m,)
-    clique_feat: np.ndarray  # E[phi_c], (len(params.cliques),)
-    agreeP: np.ndarray      # E[Π_r y_i y_k], (q,)
-    coverP: np.ndarray      # E[1(Π_r != 0)], (q,)
+    vote: np.ndarray         # E[Λ_j | y], (2, m)
+    cover: np.ndarray        # E[1(Λ_j != 0) | y], (2, m)
+    feat: np.ndarray         # E[phi_c | y], (2, len(params.cliques))
+    agreeP: np.ndarray       # E[Π_r y_i y_k], (q,)
+    coverP: np.ndarray       # E[1(Π_r != 0)], (q,)
+    prior_field: float       # sum_c 1/2 log(Z_c(+1) / Z_c(-1))
+
+    @property
+    def agree(self) -> np.ndarray:
+        """E[Λ_j y] for symmetric potentials (= E[Λ_j | y = +1])."""
+        return self.vote[0]
 
 
 def model_moments(params: LabelModelParams) -> ModelMoments:
-    agree = np.zeros(params.m)
-    cover = np.zeros(params.m)
-    feat = np.zeros(len(params.cliques))
+    vote = np.zeros((2, params.m))
+    cover = np.zeros((2, params.m))
+    feat = np.zeros((2, len(params.cliques)))
     clique_pos = {c: k for k, c in enumerate(params.cliques)}
+    prior_field = 0.0
     for c, g in all_cliques(params):
         idx = list(c)
-        table = _vote_table(len(c))  # λ for the clique; condition on y = +1 (valid by symmetry)
-        logw = table @ params.theta[idx] + (table != 0) @ params.alpha[idx]
-        phi = agreement_feature(table) if len(c) > 1 else np.zeros(len(table))
-        logw = logw + g * phi
-        w = np.exp(logw - logw.max())
-        w /= w.sum()
-        agree[idx] = w @ table
-        cover[idx] = w @ (table != 0)
-        if c in clique_pos:
-            feat[clique_pos[c]] = w @ phi
+        table, lw_pos, lw_neg, phi = clique_logweights(params, c, g)
+        w_pos, logz_pos = _normalize(lw_pos)
+        w_neg, logz_neg = _normalize(lw_neg)
+        prior_field += 0.5 * (logz_pos - logz_neg)
+        for row, w in enumerate((w_pos, w_neg)):
+            vote[row, idx] = w @ table
+            cover[row, idx] = w @ (table != 0)
+            if c in clique_pos:
+                feat[row, clique_pos[c]] = w @ phi
     zP = 1.0 + 2.0 * np.exp(params.alphaP) * np.cosh(params.thetaP)
     agreeP = 2.0 * np.exp(params.alphaP) * np.sinh(params.thetaP) / zP
     coverP = 2.0 * np.exp(params.alphaP) * np.cosh(params.thetaP) / zP
-    return ModelMoments(agree, cover, feat, agreeP, coverP)
+    return ModelMoments(vote, cover, feat, agreeP, coverP, float(prior_field))
 
 
 # --------------------------------------------------------------------------- gradient (Theorem 1)
@@ -124,27 +154,35 @@ def gradient(params: LabelModelParams, batch: list[tuple[LFOutputs, Sites]], pos
              learn_beta: bool = False) -> LabelModelParams:
     """Gradient of the marginal log-likelihood (paper Lemma 1 / Theorem 1), as raw sums.
 
-    ``prior`` (moments of the prior Ising model per image) is required only when
-    learning ``b`` or ``beta``.
+    Model terms use the tower property with the prior marginals p_i = P(y_i = +1):
+    E[f(Λ_i) g(y_i)] = p_i E[f | +1] g(+1) + (1 - p_i) E[f | -1] g(-1).
+    ``prior`` (moments of the prior Ising model per image) is required when learning
+    ``b`` or ``beta``, or when the potentials are class-conditional. For symmetric
+    potentials the model terms do not depend on p_i (Theorem 1).
     """
+    if prior is None and (learn_b or learn_beta or not params.is_symmetric):
+        raise ValueError("prior moments are required to learn b or beta, or for class-conditional potentials")
     mm = model_moments(params)
     g = params.zeros_like()
     clique_cols = [list(c) for c in params.cliques]
-    for (lfo, sites), pm in zip(batch, post, strict=True):
+    priors = prior if prior is not None else [None] * len(batch)
+    for (lfo, sites), pm, pr in zip(batch, post, priors, strict=True):
         n, m_edges = sites.n, sites.m
         L = lfo.L.astype(float)
-        g.theta += L.T @ pm.mean - n * mm.agree
-        g.alpha += (lfo.L != 0).sum(axis=0) - n * mm.cover
+        C = (lfo.L != 0).astype(float)
+        p1 = float(np.sum((1.0 + pr.mean) / 2.0)) if pr is not None else n / 2.0  # sum_i P(y_i = +1)
+        p0 = n - p1
+        g.theta += L.T @ pm.mean - (p1 * mm.vote[0] - p0 * mm.vote[1])
+        g.alpha += C.sum(axis=0) - (p1 * mm.cover[0] + p0 * mm.cover[1])
+        g.omega += C.T @ pm.mean - (p1 * mm.cover[0] - p0 * mm.cover[1])
+        g.zeta += L.sum(axis=0) - (p1 * mm.vote[0] + p0 * mm.vote[1])
         for k, cols in enumerate(clique_cols):
-            g.gamma[k] += agreement_feature(lfo.L[:, cols]).sum() - n * mm.clique_feat[k]
+            g.gamma[k] += agreement_feature(lfo.L[:, cols]).sum() - (p1 * mm.feat[0, k] + p0 * mm.feat[1, k])
         if params.q:
             P = lfo.P.astype(float)
             g.thetaP += P.T @ pm.edge_corr - m_edges * mm.agreeP
             g.alphaP += (lfo.P != 0).sum(axis=0) - m_edges * mm.coverP
-    if learn_b or learn_beta:
-        if prior is None:
-            raise ValueError("prior moments are required to learn b or beta")
-        for (lfo, sites), pm, pr in zip(batch, post, prior, strict=True):
+        if pr is not None:
             if learn_b:
                 g.b += pm.mean.sum() - pr.mean.sum()
             if learn_beta:
@@ -155,7 +193,7 @@ def gradient(params: LabelModelParams, batch: list[tuple[LFOutputs, Sites]], pos
 # --------------------------------------------------------------------------- warm start
 def independent_posterior(params: LabelModelParams, lfo: LFOutputs) -> PosteriorMoments:
     """Exact posterior moments of the beta = 0, no-pairwise model: <y_i> = tanh(h_i)."""
-    mean = np.tanh(params.b + lfo.L.astype(float) @ params.theta)
+    mean = np.tanh(params.b + lfo.L.astype(float) @ params.theta + (lfo.L != 0).astype(float) @ params.omega)
     return PosteriorMoments(mean, np.zeros(0))
 
 

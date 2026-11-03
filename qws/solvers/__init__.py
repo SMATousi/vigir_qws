@@ -2,12 +2,12 @@
 
 from .base import SampleSet, Solver, UnsupportedProblem, greedy_coloring
 from .exact import ExactSolver, all_spins
-from .graphcut import GraphCutSolver
+from .graphcut import GraphCutSolver, QPBOSolver, roof_dual, solve_submodular_qubo
 from .mcmc import GibbsSampler, SimulatedAnnealing, gibbs_polish
 
 __all__ = [
     "SampleSet", "Solver", "UnsupportedProblem", "greedy_coloring", "ExactSolver", "all_spins",
-    "GraphCutSolver", "GibbsSampler", "SimulatedAnnealing", "gibbs_polish", "get_solver",
+    "GraphCutSolver", "QPBOSolver", "roof_dual", "solve_submodular_qubo", "GibbsSampler", "SimulatedAnnealing", "gibbs_polish", "get_solver",
 ]
 
 
@@ -17,6 +17,8 @@ def get_solver(name: str, **kw):
         return ExactSolver(**kw)
     if name == "graphcut":
         return GraphCutSolver()
+    if name == "qpbo":
+        return QPBOSolver(**kw)
     if name == "gibbs":
         return GibbsSampler(**kw)
     if name == "sa":
@@ -26,9 +28,13 @@ def get_solver(name: str, **kw):
 
         return simulated_annealing_stand_in(**kw)
     if name == "anneal_qpu":  # pragma: no cover - needs D-Wave credentials
-        from .anneal import AnnealingSolver
+        from .qpu import QPUAnnealingSolver
 
-        return AnnealingSolver.dwave_qpu(**kw)
+        return QPUAnnealingSolver.dwave(**kw)
+    if name == "anneal_mock":
+        from .qpu import QPUAnnealingSolver
+
+        return QPUAnnealingSolver.mock(**kw)
     if name == "qaoa_sim":
         from .qaoa import QAOASimulator
 

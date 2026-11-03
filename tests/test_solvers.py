@@ -171,3 +171,65 @@ def test_qiskit_aer_run_and_bit_order(rng):
     ss = QAOAQiskit(p_layers=1, seed=7).minimize([p], shots=2000)[0]
     assert ss.num_samples == 2000
     assert ss.best()[1] == pytest.approx(ExactSolver().minimize([p])[0].best()[1])
+
+
+def test_qiskit_samplerv2_path_matches_statevector(rng):
+    """SamplerV2 (IBM Runtime's interface) tested offline with StatevectorSampler."""
+    pytest.importorskip("qiskit")
+    from qiskit.primitives import StatevectorSampler
+
+    from qws.solvers.qaoa import QAOAQiskit, QAOASimulator
+
+    p = random_problem(4, rng)
+    angles = np.array([0.4, 0.9, 0.7, 0.2])
+    ss = QAOAQiskit(sampler=StatevectorSampler(seed=3)).sample([p], 20000, angles=angles)[0]
+    assert ss.info["mode"] == "SamplerV2" and ss.num_samples == 20000
+    from qws.eval import tv_distance
+
+    exact = QAOASimulator().probabilities(p, angles)  # same basis/bit convention
+    assert tv_distance(ss.samples, ss.counts, exact) < 0.03
+
+
+def test_qiskit_samplerv2_with_isa_transpilation(rng):
+    """With a backend given, circuits are transpiled to its ISA before the SamplerV2 call."""
+    pytest.importorskip("qiskit_aer")
+    from qiskit_aer import AerSimulator
+    from qiskit_aer.primitives import SamplerV2 as AerSamplerV2
+
+    from qws.solvers.qaoa import QAOAQiskit
+
+    p = random_problem(5, rng)
+    q = QAOAQiskit(backend=AerSimulator(seed_simulator=1), sampler=AerSamplerV2(seed=1), p_layers=1, seed=1)
+    ss = q.minimize([p], shots=2000)[0]
+    assert ss.info["mode"] == "SamplerV2" and ss.info["backend"] is not None
+    assert ss.best()[1] == pytest.approx(ExactSolver().minimize([p])[0].best()[1])
+
+
+def test_roof_dual_persistency_and_bound(rng):
+    from qws.solvers import QPBOSolver, roof_dual
+
+    ex = ExactSolver()
+    labeled_any = False
+    for _ in range(40):
+        p = random_problem(int(rng.integers(3, 11)), rng, density=0.4)
+        labels, bound = roof_dual(p)
+        Y, E = ex._enumerate(p)
+        emin = E.min()
+        assert bound <= emin + 1e-9
+        fixed = labels != 0
+        labeled_any |= fixed.any()
+        consistent = np.all(Y[:, fixed] == labels[fixed], axis=1)
+        assert E[consistent].min() == pytest.approx(emin)  # weak persistency: an optimum agrees with all labels
+        assert QPBOSolver().minimize([p])[0].best()[1] == pytest.approx(emin)
+    assert labeled_any
+
+
+def test_roof_dual_labels_everything_when_submodular(rng):
+    from qws.solvers import roof_dual
+
+    for _ in range(10):
+        p = random_problem(10, rng, ferro=True)
+        labels, bound = roof_dual(p)
+        assert np.all(labels != 0)
+        assert p.energy(labels) == pytest.approx(ExactSolver().minimize([p])[0].best()[1])
+        assert bound == pytest.approx(p.energy(labels))

@@ -29,6 +29,7 @@ class TrainConfig:
     mode: Literal["gradient", "em"] = "gradient"
     learn_b: bool = False
     learn_beta: bool = False
+    class_conditional: bool = False  # learn omega, zeta (class-dependent coverage / vote bias)
     beta: float = 1.0  # smoothness used when params are warm-started (fixed in v1, doc 01 §6)
     warm_start_iters: int = 300
     tol: float = 1e-4
@@ -67,9 +68,23 @@ class Trainer:
         return out
 
     def _prior_moments(self, params: LabelModelParams, batch: Data) -> list[PosteriorMoments]:
-        problems = [prior_ising(params, sites, chain_key=("prior", sites.n, sites.m)) for _, sites in batch]
-        sets = [self._polish(p, ss) for p, ss in zip(problems, self.solver.sample(problems, self.config.num_samples))]
-        return [PosteriorMoments(ss.mean(), ss.edge_corr(sites.edges)) for ss, (_, sites) in zip(sets, batch)]
+        """Moments of the prior Ising model. It depends only on the graph (and parameters),
+        so images whose site graphs are identical share one sampling call (doc 03 §2.2)."""
+        groups: dict[str, list[int]] = {}
+        for k, (_, sites) in enumerate(batch):
+            key = _graph_signature(sites)
+            groups.setdefault(key, []).append(k)
+        out: list[PosteriorMoments | None] = [None] * len(batch)
+        reps = [members[0] for members in groups.values()]
+        problems = [prior_ising(params, batch[k][1], chain_key=("prior", key))
+                    for k, key in zip(reps, groups)]
+        sets = self.solver.sample(problems, self.config.num_samples)
+        for p, ss, members in zip(problems, sets, groups.values()):
+            ss = self._polish(p, ss)
+            mom = PosteriorMoments(ss.mean(), ss.edge_corr(batch[members[0]][1].edges))
+            for k in members:
+                out[k] = mom
+        return out  # type: ignore[return-value]
 
     def _polish(self, p, ss: SampleSet) -> SampleSet:
         if self.config.polish_sweeps <= 0:
@@ -83,8 +98,9 @@ class Trainer:
         data = list(data)
         if params is None:
             params = warm_start(data, iters=cfg.warm_start_iters, beta=cfg.beta)
-        if cfg.mode == "em" and params.cliques:
-            raise ValueError("EM mode supports singleton cliques only; use mode='gradient'")
+        if cfg.mode == "em" and (params.cliques or cfg.class_conditional or cfg.learn_b or cfg.learn_beta):
+            raise ValueError("EM mode supports the symmetric singleton model with fixed b, beta; use mode='gradient'")
+        need_prior = cfg.learn_b or cfg.learn_beta or cfg.class_conditional or not params.is_symmetric
         opt = Adam(cfg.lr)
         result = TrainResult(params.copy())
         bs = cfg.batch_size or len(data)
@@ -98,12 +114,15 @@ class Trainer:
                 if cfg.mode == "em":
                     new = self._m_step(params, batch, post)
                 else:
-                    prior = self._prior_moments(params, batch) if (cfg.learn_b or cfg.learn_beta) else None
+                    prior = self._prior_moments(params, batch) if need_prior else None
                     g = gradient(params, batch, post, prior, cfg.learn_b, cfg.learn_beta)
                     if not cfg.learn_b:
                         g.b = 0.0
                     if not cfg.learn_beta:
                         g.beta = 0.0
+                    if not cfg.class_conditional:
+                        g.omega[:] = 0.0
+                        g.zeta[:] = 0.0
                     n_sites = sum(s.n for _, s in batch)
                     new = project(params.from_vector(opt.step(params.to_vector(), g.to_vector() / n_sites)))
                 delta = max(delta, float(np.max(np.abs(new.to_vector() - params.to_vector()))))
@@ -133,6 +152,15 @@ class Trainer:
     def _solver_diagnostics(self) -> dict[str, Any]:
         hist = getattr(self.solver, "history", None)
         return {"beta_hat": hist[-1]["beta_hat"], "submit_scale": hist[-1]["scale"]} if hist else {}
+
+
+def _graph_signature(sites: Sites) -> str:
+    import hashlib
+
+    m = hashlib.sha256(np.array([sites.n], dtype=np.int64).tobytes())
+    m.update(np.ascontiguousarray(sites.edges).tobytes())
+    m.update(np.ascontiguousarray(np.round(sites.weights, 12)).tobytes())
+    return m.hexdigest()[:16]
 
 
 # ---------------------------------------------------------------------- inference

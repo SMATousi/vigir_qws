@@ -13,8 +13,8 @@ from scipy.ndimage import gaussian_filter
 
 from ..graph import Sites, grid_sites, superpixel_sites
 from ..lf import LFOutputs
-from ..model import LabelModelParams, agreement_feature, all_cliques
-from ..model.label_model import _vote_table
+from ..model import LabelModelParams, all_cliques
+from ..model.label_model import clique_logweights
 
 
 @dataclass
@@ -38,19 +38,17 @@ def make_image(mask: np.ndarray, rng: np.random.Generator, contrast: float = 1.0
 
 
 def sample_votes(params: LabelModelParams, y: np.ndarray, edges: np.ndarray, rng: np.random.Generator) -> LFOutputs:
-    """Draw Λ and Π from p(Λ, Π | y) under symmetric potentials."""
+    """Draw Λ and Π from p(Λ, Π | y) (paper Lemma 5), including class-conditional potentials."""
     n = y.shape[0]
     L = np.zeros((n, params.m), dtype=np.int8)
     for c, g in all_cliques(params):
         idx = list(c)
-        table = _vote_table(len(c))
-        logw = table @ params.theta[idx] + (table != 0) @ params.alpha[idx]
-        if len(c) > 1:
-            logw = logw + g * agreement_feature(table)
-        w = np.exp(logw - logw.max())
-        w /= w.sum()  # law of λ given y = +1; for y = -1 it is the law of -λ
-        draws = table[rng.choice(len(table), size=n, p=w)]
-        L[:, idx] = (draws * y[:, None]).astype(np.int8)
+        table, lw_pos, lw_neg, _ = clique_logweights(params, c, g)
+        for label, lw in ((1, lw_pos), (-1, lw_neg)):
+            sel = np.flatnonzero(y == label)
+            w = np.exp(lw - lw.max())
+            w /= w.sum()
+            L[np.ix_(sel, idx)] = table[rng.choice(len(table), size=sel.size, p=w)].astype(np.int8)
     P = np.zeros((edges.shape[0], params.q), dtype=np.int8)
     s = y[edges[:, 0]] * y[edges[:, 1]]
     for r in range(params.q):
@@ -62,15 +60,42 @@ def sample_votes(params: LabelModelParams, y: np.ndarray, edges: np.ndarray, rng
     return LFOutputs(L, P, tuple(f"lf{j}" for j in range(params.m)), tuple(f"plf{r}" for r in range(params.q)))
 
 
+def ising_mask(shape: tuple[int, int], b: float, beta: float, rng: np.random.Generator, sweeps: int = 500
+               ) -> np.ndarray:
+    """A mask drawn (approximately, by Gibbs sampling) from the prior Ising model
+    p(y) ∝ exp(b sum y + beta sum_{4-nbr} y_i y_k) with uniform weights. Use it to
+    test identifiability of (b, beta): the generating prior is then exactly the model's."""
+    from ..ising import IsingProblem
+    from ..solvers import GibbsSampler
+
+    st = grid_sites(np.zeros(shape), sigma=np.inf)
+    p = IsingProblem(np.full(st.n, b), st.edges, np.full(st.m, beta))
+    y = GibbsSampler(num_sweeps=sweeps, seed=int(rng.integers(2**31))).sample([p], 1)[0].samples[0]
+    return y.reshape(shape).astype(np.int8)
+
+
 def synthetic_dataset(true_params: LabelModelParams, n_images: int = 10, shape: tuple[int, int] = (16, 16),
                       sites: str = "grid", n_segments: int = 100, smoothness: float = 3.0,
-                      fg_fraction: float = 0.4, seed: int | None = 0) -> list[SyntheticImage]:
+                      fg_fraction: float = 0.4, seed: int | None = 0, mask_source: str = "blobs"
+                      ) -> list[SyntheticImage]:
+    """Synthetic images with votes from the label model's conditional law.
+
+    ``mask_source="blobs"``: smoothed-noise masks, contrast-sensitive weights.
+    ``mask_source="ising"``: masks from the prior Ising model with the true (b, beta) and
+    uniform weights (grid sites only), so the whole generative model is the label model.
+    """
     rng = np.random.default_rng(seed)
     out = []
     for _ in range(n_images):
-        mask = make_mask(shape, rng, smoothness, fg_fraction)
+        if mask_source == "ising":
+            mask = ising_mask(shape, true_params.b, true_params.beta, rng)
+        else:
+            mask = make_mask(shape, rng, smoothness, fg_fraction)
         image = make_image(mask, rng)
-        st = grid_sites(image) if sites == "grid" else superpixel_sites(image, n_segments=n_segments)
+        if mask_source == "ising":
+            st = grid_sites(image, sigma=np.inf)
+        else:
+            st = grid_sites(image) if sites == "grid" else superpixel_sites(image, n_segments=n_segments)
         y = np.where(st.from_pixels(mask) >= 0, 1, -1).astype(np.int8)
         out.append(SyntheticImage(image, mask, st, y, sample_votes(true_params, y, st.edges, rng)))
     return out
