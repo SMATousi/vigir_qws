@@ -65,3 +65,16 @@ The code paths exist, but they are untested against real devices.
   under a vote flip.
 - **Strong-field fixing is applied to MAP only.** It is never applied to sampling
   (doc 02 §6.1).
+
+## Next up (decided 2026-11-03, see open-questions R5–R13)
+
+Work in this order:
+
+| WP | Item | Depends on | Status |
+|----|------|------------|--------|
+| 5.1 | **Oxford-IIIT Pet** loader: binarize trimaps to foreground/background (boundary pixels are ignored in the metrics); generic LFs from colour, saliency and box priors; superpixel sites | download access to the dataset | planned |
+| 5.2 | **Learn β and b** (prior-phase sampling, shared prior per graph shape); validate identifiability on synthetic data, then on Pet | — | planned (code path exists) |
+| 5.3 | **Class-conditional LF potentials**: a general 3×2 table per LF; the prior marginal gains fields (paper Proposition 2), so the model term needs prior sampling | — | planned |
+| 5.4 | **Downstream trainer**: minimal U-Net with expected cross-entropy under the soft masks; end-task IoU on Pet; adds a `torch` optional extra | 5.1 | planned |
+| 3.1 | **D-Wave Advantage (Pegasus)** runs through `AnnealingSolver.dwave_qpu()`, with the token in `DWAVE_API_TOKEN`; hybrid solvers reported separately | Leap token | waiting for the token |
+| 3.4 | **IBM Quantum**: SamplerV2 adapter for `QAOAQiskit`; add `qiskit-ibm-runtime` to the `gate` extra | IBM account | waiting for the account |

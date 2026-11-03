@@ -7,18 +7,10 @@ entry to *Resolved*.
 
 | # | Question | Affects | Current default |
 |---|----------|---------|-----------------|
-| Q1 | Which application domain and dataset will serve as the final demonstration? | 06 §1 | Generic; synthetic plus small public binary datasets |
-| Q2 | Which specific quantum hardware and providers are available, and under what budget (QPU minutes, shots)? | 04, 06 | Design is device-agnostic; capacities measured at runtime |
 | Q3 | How are pixel LFs lifted to superpixels: majority, a coverage threshold, or a soft fraction (which would need a non-ternary vote model)? | 01 §2.1 | Majority of non-abstaining votes; abstain under 50% coverage |
-| Q4 | Should β (smoothness) be learned in v1, or fixed via validation? | 01 §6, 03 §2.1 | Fixed in v1; learning it is a stretch goal |
-| Q5 | Should v1 include class-conditional LF potentials, or only symmetric ones? | 01 §3.1, 03 §2 | Symmetric first; class-conditional behind a flag |
 | Q6 | Is QAOA useful as a *sampler* (for example via parameter tuning towards a Boltzmann target), or only for MAP and seeding? | 03 §4, 04 §3 | MAP and seeding only |
 | Q7 | Should higher-order (region-level) LFs, such as "this box contains foreground", be supported through quadratization with ancilla qubits? | 01, 02 | Deferred to v2 |
-| Q8 | Is the downstream segmentation network part of this repo, or only an interface? | 00 §4, 03 §7 | Interface only |
-| Q9 | What is the license and the publication plan, and which comparison results must be reproducible for a paper? | 06 §4 | — |
-| Q10 | Which gate-based provider: IBM Quantum (Qiskit, the current code path), or another (IonQ, Quantinuum via their SDKs)? | 04 §3, 08 Phase 3 | IBM via Qiskit |
-| Q11 | Which D-Wave solver (Advantage or Advantage2), and are hybrid solvers allowed as a reported baseline? | 04 §2, 06 §4 | Advantage QPU; hybrid reported separately |
-| Q12 | Should `main` be the default branch and should the spec + code be merged there via a pull request? | — | Work stays on the feature branch until you decide |
+| Q9 | What is the publication plan, and which comparison results must be reproducible for the paper? (License resolved: R13) | 06 §4 | — |
 
 ## Resolved
 
@@ -28,3 +20,11 @@ entry to *Resolved*.
 | R2 | Segmentation setting | Binary first; multi-class as a planned extension | 2026-10-20 |
 | R3 | Which optimization is quantized | Both learning and inference, jointly | 2026-10-20 |
 | R4 | LF type | Generic interface; unary and pairwise LFs | 2026-10-20 |
+| R5 | Q1 — first real dataset | **Oxford-IIIT Pet**, with trimaps binarized to foreground/background | 2026-11-03 |
+| R6 | Q2/Q11 — annealing hardware | **D-Wave Leap with QPU time**, primary target **Advantage (Pegasus)**; hybrid solvers only as a separately labelled baseline | 2026-11-03 |
+| R7 | Q10 — gate-based provider | **IBM Quantum** through Qiskit (needs the SamplerV2 adapter, roadmap 3.4) | 2026-11-03 |
+| R8 | Q4 — learn β | **Yes**: learn β and b with prior-phase sampling (roadmap 4.4 moves up) | 2026-11-03 |
+| R9 | Q5 — class-conditional LFs | **Yes**: support class-conditional LF potentials (roadmap 4.2 moves up) | 2026-11-03 |
+| R10 | Q8 — downstream network | **Add a small trainer**: a minimal U-Net with a noise-aware loss, to report end-task IoU | 2026-11-03 |
+| R11 | Q12 — branching | Open a pull request into `main` | 2026-11-03 |
+| R13 | License | **MIT** | 2026-11-03 |
