@@ -21,41 +21,41 @@ that drives learning (paper Proposition 8: the gradient bias is at most 2·TV).
 
 | Sampler | TV distance | max marginal error | max edge-corr error | wall (s) |
 |---|---|---|---|---|
-| exact (reference sampler) | 0.043 ± 0.012 | 0.023 ± 0.014 | 0.027 ± 0.013 | 0.000717 |
-| gibbs, 10 sweeps | 0.036 ± 0.009 | 0.016 ± 0.007 | 0.021 ± 0.007 | 0.005 |
-| gibbs, 100 sweeps | 0.039 ± 0.012 | 0.017 ± 0.009 | 0.026 ± 0.013 | 0.043 |
-| anneal_sim, auto range (cold) | 0.542 ± 0.132 | 0.682 ± 0.264 | 0.715 ± 0.260 | 0.426 |
-| anneal_sim fixed T, raw | 0.430 ± 0.118 | 0.457 ± 0.161 | 0.491 ± 0.176 | 0.525 |
-| anneal_sim fixed T + 5 polish | 0.041 ± 0.015 | 0.020 ± 0.007 | 0.022 ± 0.006 | 0.516 |
-| anneal_sim calibrated | 0.039 ± 0.014 | 0.015 ± 0.008 | 0.020 ± 0.007 | 0.606 |
-| qaoa_sim p=2 raw | 0.490 ± 0.201 | 0.625 ± 0.354 | 0.624 ± 0.348 | 0.214 |
-| qaoa_sim p=2 + 5 polish | 0.041 ± 0.015 | 0.020 ± 0.007 | 0.022 ± 0.006 | 0.218 |
+| exact (reference sampler) | 0.041 ± 0.020 | 0.018 ± 0.010 | 0.024 ± 0.009 | 0.000782 |
+| gibbs, 10 sweeps | 0.042 ± 0.021 | 0.019 ± 0.007 | 0.022 ± 0.010 | 0.005 |
+| gibbs, 100 sweeps | 0.043 ± 0.023 | 0.020 ± 0.008 | 0.022 ± 0.010 | 0.042 |
+| anneal_sim, auto range (cold) | 0.566 ± 0.186 | 0.591 ± 0.261 | 0.656 ± 0.260 | 0.419 |
+| anneal_sim fixed T, raw | 0.462 ± 0.149 | 0.424 ± 0.161 | 0.453 ± 0.132 | 0.517 |
+| anneal_sim fixed T + 5 polish | 0.044 ± 0.022 | 0.020 ± 0.008 | 0.023 ± 0.009 | 0.515 |
+| anneal_sim calibrated | 0.044 ± 0.019 | 0.025 ± 0.008 | 0.029 ± 0.010 | 0.601 |
+| qaoa_sim p=2 raw | 0.375 ± 0.139 | 0.417 ± 0.203 | 0.412 ± 0.202 | 0.240 |
+| qaoa_sim p=2 + 5 polish | 0.044 ± 0.022 | 0.020 ± 0.008 | 0.023 ± 0.009 | 0.249 |
 ### nominal (β=0.5 model)
 
 | Sampler | TV distance | max marginal error | max edge-corr error | wall (s) |
 |---|---|---|---|---|
-| exact (reference sampler) | 0.009 ± 0.004 | 0.010 ± 0.008 | 0.011 ± 0.008 | 0.00074 |
-| gibbs, 10 sweeps | 0.010 ± 0.006 | 0.013 ± 0.013 | 0.015 ± 0.010 | 0.005 |
-| gibbs, 100 sweeps | 0.006 ± 0.002 | 0.006 ± 0.004 | 0.006 ± 0.003 | 0.040 |
-| anneal_sim, auto range (cold) | 0.092 ± 0.029 | 0.142 ± 0.051 | 0.148 ± 0.059 | 0.434 |
-| anneal_sim fixed T, raw | 0.092 ± 0.029 | 0.142 ± 0.050 | 0.148 ± 0.059 | 0.476 |
-| anneal_sim fixed T + 5 polish | 0.008 ± 0.003 | 0.010 ± 0.006 | 0.010 ± 0.006 | 0.489 |
-| anneal_sim calibrated | 0.007 ± 0.004 | 0.007 ± 0.006 | 0.008 ± 0.007 | 0.578 |
-| qaoa_sim p=2 raw | 0.917 ± 0.058 | 1.109 ± 0.184 | 1.145 ± 0.234 | 0.189 |
-| qaoa_sim p=2 + 5 polish | 0.042 ± 0.041 | 0.058 ± 0.059 | 0.065 ± 0.074 | 0.194 |
+| exact (reference sampler) | 0.010 ± 0.006 | 0.010 ± 0.006 | 0.011 ± 0.007 | 0.000799 |
+| gibbs, 10 sweeps | 0.023 ± 0.023 | 0.040 ± 0.044 | 0.039 ± 0.043 | 0.005 |
+| gibbs, 100 sweeps | 0.009 ± 0.003 | 0.010 ± 0.005 | 0.011 ± 0.005 | 0.042 |
+| anneal_sim, auto range (cold) | 0.127 ± 0.125 | 0.193 ± 0.250 | 0.206 ± 0.252 | 0.445 |
+| anneal_sim fixed T, raw | 0.118 ± 0.106 | 0.174 ± 0.207 | 0.187 ± 0.211 | 0.493 |
+| anneal_sim fixed T + 5 polish | 0.011 ± 0.012 | 0.014 ± 0.016 | 0.014 ± 0.017 | 0.493 |
+| anneal_sim calibrated | 0.010 ± 0.005 | 0.010 ± 0.006 | 0.011 ± 0.006 | 0.582 |
+| qaoa_sim p=2 raw | 0.891 ± 0.125 | 1.140 ± 0.380 | 1.108 ± 0.351 | 0.177 |
+| qaoa_sim p=2 + 5 polish | 0.086 ± 0.091 | 0.152 ± 0.164 | 0.147 ± 0.157 | 0.191 |
 ### strong coupling (J×3)
 
 | Sampler | TV distance | max marginal error | max edge-corr error | wall (s) |
 |---|---|---|---|---|
-| exact (reference sampler) | 0.002 ± 0.003 | 0.003 ± 0.006 | 0.003 ± 0.006 | 0.00075 |
-| gibbs, 10 sweeps | 0.467 ± 0.103 | 0.777 ± 0.079 | 0.777 ± 0.223 | 0.006 |
-| gibbs, 100 sweeps | 0.375 ± 0.120 | 0.628 ± 0.150 | 0.646 ± 0.302 | 0.043 |
-| anneal_sim, auto range (cold) | 0.057 ± 0.074 | 0.099 ± 0.141 | 0.113 ± 0.149 | 0.417 |
-| anneal_sim fixed T, raw | 0.052 ± 0.071 | 0.094 ± 0.138 | 0.104 ± 0.142 | 0.405 |
-| anneal_sim fixed T + 5 polish | 0.014 ± 0.030 | 0.023 ± 0.045 | 0.029 ± 0.060 | 0.402 |
-| anneal_sim calibrated | 0.180 ± 0.230 | 0.238 ± 0.306 | 0.280 ± 0.366 | 0.567 |
-| qaoa_sim p=2 raw | 0.992 ± 0.014 | 1.350 ± 0.169 | 1.161 ± 0.074 | 0.125 |
-| qaoa_sim p=2 + 5 polish | 0.487 ± 0.184 | 0.762 ± 0.246 | 0.702 ± 0.391 | 0.134 |
+| exact (reference sampler) | 0.001 ± 0.002 | 0.002 ± 0.003 | 0.002 ± 0.003 | 0.000715 |
+| gibbs, 10 sweeps | 0.474 ± 0.144 | 0.788 ± 0.206 | 0.740 ± 0.339 | 0.005 |
+| gibbs, 100 sweeps | 0.323 ± 0.184 | 0.590 ± 0.273 | 0.508 ± 0.400 | 0.041 |
+| anneal_sim, auto range (cold) | 0.037 ± 0.063 | 0.073 ± 0.124 | 0.074 ± 0.126 | 0.388 |
+| anneal_sim fixed T, raw | 0.032 ± 0.053 | 0.064 ± 0.107 | 0.064 ± 0.107 | 0.389 |
+| anneal_sim fixed T + 5 polish | 0.024 ± 0.056 | 0.048 ± 0.111 | 0.049 ± 0.111 | 0.393 |
+| anneal_sim calibrated | 0.167 ± 0.197 | 0.214 ± 0.248 | 0.252 ± 0.286 | 0.575 |
+| qaoa_sim p=2 raw | 0.998 ± 0.003 | 1.214 ± 0.170 | 1.200 ± 0.103 | 0.104 |
+| qaoa_sim p=2 + 5 polish | 0.450 ± 0.125 | 0.674 ± 0.184 | 0.699 ± 0.305 | 0.104 |
 
 ## Annealing stand-in variants
 
@@ -66,7 +66,7 @@ that drives learning (paper Proposition 8: the gradient bias is at most 2·TV).
 
 ## Calibration of the fixed-T stand-in
 
-Raw pseudo-likelihood estimates on the nominal problems: 1000.00, 1000.00, 1000.00, 1000.00, 1000.00, 1000.00.
+Raw pseudo-likelihood estimates on the nominal problems: 1000.00, 1000.00, 1000.00, 1000.00, 1000.00, 3.95.
 A value of 1000 is the estimator's cap. It means every sampled spin was aligned with its local field, so the samples
 look like zero temperature and no finite temperature can be read off them.
 
@@ -75,9 +75,9 @@ Calibration still converges, because each step changes the submit scale by at mo
 
 | Regime | steps | final scale | implied β_eff = 1/scale | last β̂ |
 |---|---|---|---|---|
-| weak coupling (J×0.3) | 10 | 0.248 | 4.031 | 1.001 |
-| nominal (β=0.5 model) | 10 | 0.242 | 4.134 | 0.961 |
-| strong coupling (J×3) | 10 | 0.248 | 4.039 | 100.061 |
+| weak coupling (J×0.3) | 10 | 0.251 | 3.978 | 0.999 |
+| nominal (β=0.5 model) | 10 | 0.263 | 3.806 | 1.037 |
+| strong coupling (J×3) | 10 | 0.247 | 4.047 | 99.878 |
 
 For comparison, the stand-in's schedule ends at β = 4.0.
 

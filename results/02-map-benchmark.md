@@ -20,35 +20,35 @@ in [spec/06](../spec/06-evaluation.md), task T1.
 
 | Solver | n | mean rel. gap | mean hit rate | median TTS99 (s) | mean wall (s) |
 |---|---|---|---|---|---|
-| sa | 16 | 0 | 0.998 | 0.010 | 0.010 |
-| anneal_sim | 16 | 3.94e-17 | 0.981 | 0.018 | 0.019 |
-| qaoa_sim p=1 | 16 | 0.342 | 0 | ∞ | 0.422 |
-| qaoa_sim p=2 | 16 | 0.057 | 0.073 | 122.461 | 1.627 |
+| sa | 16 | -2.1e-17 | 0.936 | 0.010 | 0.011 |
+| anneal_sim | 16 | -2.31e-17 | 0.939 | 0.019 | 0.019 |
+| qaoa_sim p=1 | 16 | 0.359 | 0 | ∞ | 0.467 |
+| qaoa_sim p=2 | 16 | 0.055 | 0.115 | 310.487 | 1.765 |
 
 ## Small problems (4×4 grid, n = 16), ferromagnetic
 
 | Solver | n | mean rel. gap | mean hit rate | median TTS99 (s) | mean wall (s) |
 |---|---|---|---|---|---|
-| graphcut | 16 | 0 | 1.000 | 0.00022 | 0.000399 |
+| graphcut | 16 | 0 | 1.000 | 0.000187 | 0.00038 |
 | sa | 16 | 0 | 1.000 | 0.010 | 0.010 |
-| anneal_sim | 16 | -2.95e-17 | 0.996 | 0.017 | 0.017 |
-| qaoa_sim p=1 | 16 | 0.022 | 0.044 | 45.117 | 0.410 |
-| qaoa_sim p=2 | 16 | 0 | 0.109 | 103.998 | 3.011 |
+| anneal_sim | 16 | 0 | 1.000 | 0.017 | 0.017 |
+| qaoa_sim p=1 | 16 | 0.029 | 0.080 | 45.642 | 0.456 |
+| qaoa_sim p=2 | 16 | 0 | 0.176 | 83.518 | 2.758 |
 
 ## Large problems (32×32 grid, n = 1024), frustrated
 
 | Solver | n | mean rel. gap | mean hit rate | median TTS99 (s) | mean wall (s) |
 |---|---|---|---|---|---|
-| sa | 1024 | 1.91e-16 | 0.700 | 0.342 | 0.122 |
-| anneal_sim | 1024 | 0 | 0.683 | 0.354 | 0.130 |
+| sa | 1024 | 1.92e-16 | 0.483 | 1.076 | 0.119 |
+| anneal_sim | 1024 | 1.42e-16 | 0.333 | 1.253 | 0.130 |
 
 ## Large problems (32×32 grid, n = 1024), ferromagnetic
 
 | Solver | n | mean rel. gap | mean hit rate | median TTS99 (s) | mean wall (s) |
 |---|---|---|---|---|---|
 | graphcut | 1024 | 0 | 1.000 | 0.002 | 0.002 |
-| sa | 1024 | 2.96e-16 | 0.733 | 0.347 | 0.122 |
-| anneal_sim | 1024 | -3.79e-17 | 0.850 | 0.182 | 0.115 |
+| sa | 1024 | 2.94e-16 | 0.583 | 0.793 | 0.121 |
+| anneal_sim | 1024 | -2.22e-16 | 0.783 | 0.445 | 0.115 |
 
 ## Decomposition: block coordinate descent with 4×4 exact tiles (32×32, frustrated)
 
@@ -57,9 +57,9 @@ boundary (paper Proposition 5(b)–(c)).
 
 | Problem | n | tiles | accepted tile moves | final energy | best monolithic | rel. gap | wall (s) |
 |---|---|---|---|---|---|---|---|
-| 0 | 1024 | 64 | 78 | -3197.614 | -3197.614 | 0 | 6.426 |
-| 1 | 1024 | 64 | 73 | -3174.556 | -3191.539 | 0.005 | 5.531 |
-| 2 | 1024 | 64 | 74 | -3157.496 | -3165.137 | 0.002 | 4.794 |
+| 0 | 1024 | 64 | 80 | -3131.405 | -3133.675 | 0.000724 | 4.640 |
+| 1 | 1024 | 64 | 75 | -3194.416 | -3194.416 | 5.69e-16 | 4.763 |
+| 2 | 1024 | 64 | 75 | -3195.935 | -3196.497 | 0.000176 | 4.704 |
 
 ## Observations
 

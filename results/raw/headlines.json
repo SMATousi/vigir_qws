@@ -1,0 +1,57 @@
+{
+  "01-label-quality.md": {
+    "title": "01 \u2014 Label quality",
+    "question": "Does the structured label model beat unstructured weak supervision?",
+    "headline": "IoU 0.978 \u00b1 0.007 vs. 0.723 \u00b1 0.006 (majority) and 0.761 \u00b1 0.007 (independent); LF accuracies recovered within 0.08"
+  },
+  "02-map-benchmark.md": {
+    "title": "02 \u2014 MAP benchmark",
+    "question": "How well do solvers find ground states?",
+    "headline": "Graph cut exact on ferromagnetic problems and refuses frustrated ones; SA / Ocean stand-in reach the exact optimum on n = 16; QAOA p \u2264 2 has a lower hit rate"
+  },
+  "03-sampling-benchmark.md": {
+    "title": "03 \u2014 Sampling benchmark",
+    "question": "How close are samplers to Boltzmann at \u03b2 = 1?",
+    "headline": "Nominal TV: Gibbs 0.01, raw annealing 0.12, calibrated 0.01, QAOA+polish 0.09 (exact-sampler floor 0.01); under strong coupling Gibbs fails, annealing does not"
+  },
+  "04-theory-checks.md": {
+    "title": "04 \u2014 Theory checks",
+    "question": "Do the paper's quantitative claims hold numerically?",
+    "headline": "Proposition 6 bias, Proposition 8 sample complexity and Proposition 9 consistency all match"
+  },
+  "05-qpu-readiness.md": {
+    "title": "05 \u2014 QPU readiness (mock)",
+    "question": "Is the D-Wave path ready for real hardware?",
+    "headline": "Full path runs on mock Pegasus P16; \u2265 64 (all tested) 4\u00d74 problems per submission; exact optimum on 8/8 problems; calibration recovers \u03b2_eff \u2248 4.0 (true 4)"
+  },
+  "06-learn-beta-b.md": {
+    "title": "06 \u2014 Learning \u03b2 and b",
+    "question": "Are \u03b2 and b identifiable from votes alone?",
+    "headline": "\u03b2 recovered at all coupling strengths; b well identified only below the critical point (spontaneous magnetization above it)"
+  },
+  "07-class-conditional.md": {
+    "title": "07 \u2014 Class-conditional LFs",
+    "question": "Are asymmetric LF accuracies/coverages learnable?",
+    "headline": "Identifiable (exact recovery with exact moments); in the coupled finite-data case \u03b6 is recovered well, \u03c9 partially; IoU similar to the symmetric model"
+  },
+  "08-petlike-pipeline.md": {
+    "title": "08 \u2014 Pet-format pipeline",
+    "question": "Does the real-image pipeline work end to end?",
+    "headline": "On generated Pet-layout data: structured IoU 0.787 vs. 0.671 (independent), 0.508 (majority), oracle 0.928; useless LFs get near-zero weight. Not real Pet data"
+  },
+  "09-downstream-unet.md": {
+    "title": "09 \u2014 Downstream U-Net",
+    "question": "Do better weak labels give a better segmentation network?",
+    "headline": "Training-label IoU 0.80 (structured) vs. 0.68 / 0.51; U-Net test IoU 0.75 / 0.75 / 0.39 (GT-trained 0.73): network-limited on this small synthetic set"
+  },
+  "10-qpbo.md": {
+    "title": "10 \u2014 QPBO",
+    "question": "How much of a frustrated posterior is decided exactly by roof duality?",
+    "headline": "Realistic posteriors: 100% labeled (MAP solved exactly by max-flow); weak LFs at \u03b8\u1d3e = 2: 60%; field-free spin glass: 0%; persistency verified in every case"
+  },
+  "11-multiclass.md": {
+    "title": "11 \u2014 Multi-class",
+    "question": "Does the K-class model work, and what does one-hot encoding cost?",
+    "headline": "Accuracy 0.927 (structured) vs. 0.708 (independent) / 0.718 (majority); one-hot QUBO needs more reads (17/20 \u2192 20/20 optima with 20 \u2192 100 reads)"
+  }
+}

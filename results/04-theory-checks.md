@@ -22,9 +22,9 @@ against the Hoeffding term √(2 log(2/δ)/S) with δ = 0.05.
 
 | S | mean max marginal error | Hoeffding bound (δ=0.05) |
 |---|---|---|
-| 100 | 0.074 | 0.272 |
-| 1000 | 0.023 | 0.086 |
-| 10000 | 0.008 | 0.027 |
+| 100 | 0.042 | 0.272 |
+| 1000 | 0.018 | 0.086 |
+| 10000 | 0.004 | 0.027 |
 
 ## Proposition 9: the pseudo-likelihood temperature estimator is consistent
 

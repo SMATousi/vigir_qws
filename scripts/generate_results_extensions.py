@@ -134,8 +134,9 @@ Final implied β_eff = 1/scale = **{1 / cal.scale:.2f}**.
 
 ## Observations
 
-- Grid and superpixel posterior graphs embed with short chains. The one-hot multi-class encoding is denser
-  (every site is a K-clique) and needs longer chains.
+- Grid graphs embed with chains of at most 2 qubits. Superpixel adjacency graphs are less regular: the densest
+  one (263 sites, 714 couplers) needs a mean chain of about 2 and a maximum of 7. The one-hot multi-class
+  encoding is denser too (every site is a K-clique) and needs longer chains than the plain grid.
 - Range-aware scaling (κ) keeps logical couplers, fields and chains inside the device ranges with
   `auto_scale` off. Problems that already fit are not rescaled, which is what makes calibration possible.
 - The calibration loop recovers the mock device's temperature from samples alone. This is the first
@@ -350,7 +351,8 @@ Pairwise colour-contrast LF: learned θᴾ = {thP:.2f}.
 
 ## Observations
 
-- The structured model beats both baselines by a wide margin, and gets close to the superpixel oracle.
+- The structured model beats both baselines by a wide margin, and closes roughly half of the gap between the
+  independent model and the superpixel oracle. The remainder reflects errors in the generic LFs themselves.
 - Without labels, the label model correctly ranks the LFs. It assigns high weight to the reliable priors and
   near-zero weight to saliency, which is close to chance on these images. This is the core promise of data
   programming, working on real-format images.
