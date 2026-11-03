@@ -10,6 +10,9 @@ entry to *Resolved*.
 | Q3 | How are pixel LFs lifted to superpixels: majority, a coverage threshold, or a soft fraction (which would need a non-ternary vote model)? | 01 §2.1 | Majority of non-abstaining votes; abstain under 50% coverage |
 | Q6 | Is QAOA useful as a *sampler* (for example via parameter tuning towards a Boltzmann target), or only for MAP and seeding? | 03 §4, 04 §3 | MAP and seeding only |
 | Q7 | Should higher-order (region-level) LFs, such as "this box contains foreground", be supported through quadratization with ancilla qubits? | 01, 02 | Deferred to v2 |
+| Q14 | Network access: allow `www.robots.ox.ac.uk` (Oxford-IIIT Pet download) and the D-Wave Leap / IBM Quantum endpoints in the environment's network policy, or place the Pet data on disk? | 08 Phase 3/5 | Pet and hardware runs wait for this |
+| Q15 | Multi-class encoding beyond one-hot: implement the domain-wall encoding (K − 1 qubits per site, fewer infeasible states)? | 07 §3, report 11 | One-hot only |
+| Q16 | Chain strength and annealing time on the real Advantage: tune per graph shape, or keep the defaults (csf 1.5, default anneal)? | 09 §4, D10 | Defaults; tune in roadmap 3.1 |
 | Q9 | What is the publication plan, and which comparison results must be reproducible for the paper? (License resolved: R13) | 06 §4 | — |
 
 ## Resolved

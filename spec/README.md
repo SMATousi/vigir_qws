@@ -1,6 +1,6 @@
 # vigir_qws — Specification
 
-**Status:** v0.2. Phases 1–2 of the roadmap are implemented in `qws/`; Phase 3 needs QPU access (doc 08).
+**Status:** v0.3. Everything that does not need a D-Wave token, an IBM account or network access to the Oxford-IIIT Pet hosts is implemented, tested (96 tests) and reported in [`results/`](../results/README.md). Remaining items and how to finish them: doc 08.
 
 This folder defines **quantum weak supervision (QWS)**: data programming
 for image segmentation, written as Ising/QUBO problems. That form lets the
@@ -19,6 +19,8 @@ problem run on quantum annealers and on gate-based quantum hardware.
 | 06 | [Evaluation](06-evaluation.md) | Datasets, baselines, metrics, and acceptance criteria |
 | 07 | [Multi-class extension](07-multiclass-extension.md) | Planned extension from binary to K-class segmentation |
 | 08 | [Implementation roadmap](08-roadmap.md) | Work packages, status, and what needs real QPU access |
+| 09 | [Implementation notes](09-implementation-notes.md) | How every part is implemented: formulas, conventions, algorithms, numerical choices, tests |
+| 10 | [Decision log](10-decision-log.md) | Every owner and implementation decision with alternatives and rationale |
 | — | [Open questions](open-questions.md) | Decisions that are still open |
 | — | [Paper draft](paper-draft.md) | Theory-only short paper: Ising reductions, learning theorem, sampler-fidelity analysis |
 

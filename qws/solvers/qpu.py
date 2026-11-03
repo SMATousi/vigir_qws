@@ -71,7 +71,9 @@ class QPUAnnealingSolver(Solver):
     capabilities = frozenset({"minimize", "sample"})
 
     def __init__(self, child: Any, chain_strength_factor: float = 1.5, chain_break_threshold: float = 0.1,
-                 embedding_seed: int = 0, parallel: bool = True, embedding_tries: int = 10, **sample_kwargs: Any):
+                 embedding_seed: int = 0, parallel: bool = True, embedding_tries: int = 10,
+                 embedding_timeout: float = 60.0, pack_timeout: float = 5.0, max_fill: float = 0.6,
+                 **sample_kwargs: Any):
         self.child = child
         self.csf = chain_strength_factor
         self.chain_break_threshold = chain_break_threshold
@@ -80,6 +82,10 @@ class QPUAnnealingSolver(Solver):
         self.embedding_tries = embedding_tries
         self.sample_kwargs = sample_kwargs
         self.embeddings: dict[tuple[str, ...], dict] = {}
+        self._failed: set[tuple[str, ...]] = set()       # unions known not to embed (never retried)
+        self._groups_cache: dict[tuple[str, ...], list[list[int]]] = {}
+        self._tgt = None
+        self.embedding_timeout, self.pack_timeout, self.max_fill = embedding_timeout, pack_timeout, max_fill
         props = child.properties
         self.h_range = tuple(props["h_range"])
         self.j_range = tuple(props["j_range"])
@@ -121,29 +127,42 @@ class QPUAnnealingSolver(Solver):
         return max(1.0, maxh / h_max, maxj / j_max, self.csf * maxj / j_min)
 
     def _target_graph(self):
-        import networkx as nx
+        if self._tgt is None:
+            import networkx as nx
 
-        g = nx.Graph()
-        g.add_nodes_from(self.child.nodelist)
-        g.add_edges_from(self.child.edgelist)
-        return g
+            g = nx.Graph()
+            g.add_nodes_from(self.child.nodelist)
+            g.add_edges_from(self.child.edgelist)
+            self._tgt = g
+        return self._tgt
 
-    def embed(self, problems: Sequence[IsingProblem]) -> dict:
+    def embed(self, problems: Sequence[IsingProblem], tries: int | None = None, timeout: float | None = None) -> dict:
         """Embedding of the disjoint union of the problems' graphs, cached by graph keys.
 
-        Logical variable ``(k, i)`` is variable ``i`` of problem ``k``.
+        Logical variable ``(k, i)`` is variable ``i`` of problem ``k``. Failures are cached
+        too, so a union that does not fit is never retried.
         """
         key = tuple(graph_key(p) for p in problems)
         if key in self.embeddings:
             return self.embeddings[key]
+        if key in self._failed:
+            raise RuntimeError("embedding previously failed for this union of graphs")
         import minorminer
 
         src = [((k, int(i)), (k, int(j))) for k, p in enumerate(problems) for i, j in p.edges]
         isolated = [(k, i) for k, p in enumerate(problems) for i in range(p.n)]
+        import networkx as nx
+        from dwave.embedding import is_valid_embedding
+
         tgt = self._target_graph()
+        src_graph = nx.Graph(src)
         emb: dict = {}
-        for attempt in range(self.embedding_tries):
-            emb = minorminer.find_embedding(src, tgt, random_seed=self.embedding_seed + attempt)
+        for attempt in range(tries or self.embedding_tries):
+            emb = minorminer.find_embedding(src, tgt, random_seed=self.embedding_seed + attempt,
+                                            timeout=timeout or self.embedding_timeout)
+            # minorminer can return a non-empty but invalid embedding (e.g. on timeout): verify it
+            if emb and not is_valid_embedding(emb, src_graph, tgt):
+                emb = {}
             if emb or not src:
                 break
         # variables without edges still need a qubit each
@@ -157,30 +176,50 @@ class QPUAnnealingSolver(Solver):
                     emb = {}
                     break
         if src and not emb or any(v not in emb for v in isolated):
+            self._failed.add(key)
             raise RuntimeError(f"no embedding found for {len(problems)} problem(s) with "
                                f"{sum(p.n for p in problems)} variables")
         self.embeddings[key] = emb
         return emb
 
     def _groups(self, problems: Sequence[IsingProblem]) -> list[list[int]]:
-        """Greedily pack problem indices into submissions that embed together."""
+        """Greedily pack problem indices into submissions that embed together.
+
+        A problem joins the current submission while the union still embeds. Unions
+        whose variable count exceeds ``max_fill`` x (number of qubits) are not attempted,
+        and packing attempts use one short minorminer run (``pack_timeout``). The
+        grouping is cached per tuple of graph keys, so repeated calls (training steps)
+        cost nothing.
+        """
         if not self.parallel:
             return [[k] for k in range(len(problems))]
+        keys = tuple(graph_key(p) for p in problems)
+        if keys in self._groups_cache:
+            return self._groups_cache[keys]
+        budget = self.max_fill * len(self.child.nodelist)
         groups: list[list[int]] = []
         current: list[int] = []
         for k in range(len(problems)):
             trial = current + [k]
-            try:
-                self.embed([problems[i] for i in trial])
+            fits = False
+            if current and sum(problems[i].n for i in trial) <= budget:
+                try:
+                    self.embed([problems[i] for i in trial], tries=1, timeout=self.pack_timeout)
+                    fits = True
+                except RuntimeError:
+                    fits = False
+            if not current:
+                self.embed([problems[k]])  # a single problem must embed (raises otherwise)
+                current = [k]
+            elif fits:
                 current = trial
-            except RuntimeError:
-                if not current:
-                    raise
+            else:
                 groups.append(current)
                 current = [k]
                 self.embed([problems[k]])
         if current:
             groups.append(current)
+        self._groups_cache[keys] = groups
         return groups
 
     # ------------------------------------------------------------------ calls

@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="qws", description="Quantum weak supervision for segmentation")
     sub = parser.add_subparsers(dest="cmd", required=True)
     demo = sub.add_parser("demo", help="synthetic end-to-end run")
-    demo.add_argument("--solver", default="gibbs", help="sampling backend (gibbs, sa, exact, anneal_sim, ...)")
+    demo.add_argument("--solver", default="gibbs", help="sampling backend (gibbs, sa, exact, anneal_sim, anneal_mock, ...)")
     demo.add_argument("--images", type=int, default=8)
     demo.add_argument("--size", type=int, default=16)
     demo.add_argument("--epochs", type=int, default=20)

@@ -1,80 +1,97 @@
 # 08 — Implementation Roadmap
 
-This document turns docs 00–07 into ordered work packages. Each package lists its
-deliverables and the tests that close it. Status markers:
+This document turns docs 00–07 into ordered work packages, with each package's deliverables, the tests or
+reports that close it, and its status.
 
-- ✅ done
-- 🟡 implemented, but needs real hardware or user input to validate
-- ⛔ blocked on QPU access or on a user decision
+- Implementation details: [doc 09](09-implementation-notes.md).
+- Decisions and their rationale: [doc 10](10-decision-log.md).
+- Measured results: [`results/`](../results/README.md).
 
-## Phase 1 — Classical reference implementation (milestone M1)
+Status markers:
 
-| WP | Package | Deliverables | Closing tests | Status |
-|----|---------|--------------|---------------|--------|
-| 1.0 | Scaffolding | `pyproject.toml` with optional extras `anneal`, `gate`, `dev`; `qws` package skeleton; pytest config | `pip install -e .[dev]` works and `pytest` runs | ✅ |
-| 1.1 | `qws.ising` | `IsingProblem`; vectorized energies; QUBO and Pauli conversion; conditioning (doc 02 §6.2); strong-field fixing (§6.1); scaling and dynamic-range report (§7) | Energy identity Ising ↔ QUBO by enumeration (N ≤ 12); doc 02 §8 fixture; exactness of conditioning | ✅ |
-| 1.2 | `qws.graph` | Pixel-grid sites (4/8-neighbour) and SLIC superpixel sites; contrast-sensitive affinities; site ↔ pixel maps | Edge counts; weights in (0, 1]; round trip between pixels and sites | ✅ |
-| 1.3 | `qws.lf` | Unary and pairwise LF interfaces; `apply_lfs` producing Λ and Π; majority lifting to superpixels (Q3 default); generic example LFs | Vote shapes and value ranges; lifting rule | ✅ |
-| 1.4 | `qws.model` | `LabelModelParams`; posterior and prior Ising builders (doc 01 §3.2, §3.4); closed-form and clique-enumeration moments; independent-model warm start | Closed forms vs. brute force; posterior builder vs. joint-model enumeration | ✅ |
-| 1.5 | `qws.solvers` (classical) | `exact`, `sa`, `gibbs` (graph-coloured, persistent chains, polishing), `graphcut` (refuses negative couplings) | `exact` vs. analytic results; `graphcut` = `exact` on random ferromagnetic problems; Gibbs marginals ≈ exact | ✅ |
-| 1.6 | `qws.learn` | Gradient (Theorem 1 of the paper); Adam trainer with projection; EM mode; pseudo-likelihood temperature estimator with scale calibration; polishing | Parameter recovery on synthetic data with `exact` / `gibbs`; PL estimator recovers a known β | ✅ |
-| 1.7 | `qws.decompose` | Tiling; block-coordinate-descent MAP; block Gibbs | Block-CD energy never increases; block-Gibbs marginals ≈ exact | ✅ |
-| 1.8 | `qws.eval` | Synthetic generator (doc 06 §1); metrics (doc 06 §3); benchmark runner; JSON result store | Metric unit tests; the structured model beats majority vote and β = 0 on coherent synthetic data (M1 criterion) | ✅ |
-| 1.9 | CLI and config | `qws demo` (synthetic end-to-end); `qws run <config.yaml>` | Smoke test of the CLI | ✅ |
+- ✅ done (implemented, tested, and reported where applicable)
+- 🟡 implemented and validated offline; needs real hardware or real data for the final run
+- ⛔ blocked on access (credentials, network) that the user must provide
 
-## Phase 2 — Quantum simulation (milestone M2)
+**Current state:** everything that can be done without a D-Wave Leap token, an IBM Quantum account, or
+network access to the Oxford-IIIT Pet hosts is done. The test suite has 96 tests; 2 more real-hardware tests
+are opt-in.
 
-| WP | Package | Deliverables | Status |
-|----|---------|--------------|--------|
-| 2.1 | `qws.solvers.qaoa` | `QAOASimulator`, an exact statevector QAOA for N ≲ 16 with linear-ramp warm start | ✅ |
-| 2.2 | `qws.solvers.qaoa` | `QAOAQiskit`, which builds a Qiskit circuit with the basis convention of doc 02 §4 and runs on any `BackendSampler`; tested with the Aer simulator | ✅ |
-| 2.3 | `qws.solvers.anneal` | `AnnealingSolver`, the Ocean-SDK path: sign conversion, auto-scaling, chain strength, cached embeddings, metadata; tested end-to-end with a **simulated** Ocean sampler standing in for the QPU | ✅ |
+## Phase 1 — Classical reference implementation (milestone M1) ✅
 
-## Phase 3 — Real hardware (milestones M3 and M4): needs access
+| WP | Package | Deliverables | Closed by | Status |
+|----|---------|--------------|-----------|--------|
+| 1.0 | Scaffolding | `pyproject.toml` with extras `anneal`, `gate`, `downstream`, `dev`; `qws` package; pytest config | `pip install -e .[dev]`; `pytest` | ✅ |
+| 1.1 | `qws.ising` | `IsingProblem`; QUBO / Ocean / Pauli conversions; conditioning; strong-field fixing; scaling and dynamic range | `tests/test_ising.py` | ✅ |
+| 1.2 | `qws.graph` | Pixel-grid and SLIC superpixel sites; contrast-sensitive affinities | `tests/test_graph_lf.py` | ✅ |
+| 1.3 | `qws.lf` | Unary and pairwise LF interfaces; `apply_lfs`; majority lifting (R3 default); example LFs | `tests/test_graph_lf.py` | ✅ |
+| 1.4 | `qws.model` | Parameters; posterior and prior builders; moments; Theorem-1 gradient; warm start | `tests/test_model.py` (brute-force joint, finite differences) | ✅ |
+| 1.5 | `qws.solvers` (classical) | `exact`, `gibbs`, `sa`, `graphcut` | `tests/test_solvers.py` | ✅ |
+| 1.6 | `qws.learn` | Adam trainer, EM mode, pseudo-likelihood temperature calibration (bounded steps), polishing | `tests/test_learn.py`; reports 01, 03, 04 | ✅ |
+| 1.7 | `qws.decompose` | Tiling; block coordinate descent; block Gibbs | `tests/test_decompose_eval.py`; report 02 | ✅ |
+| 1.8 | `qws.eval` | Synthetic generator (blob and Ising-prior masks); metrics (with ignore mask); benchmarks | `tests/test_decompose_eval.py` | ✅ |
+| 1.9 | CLI / config | `qws demo`, `qws run <config.yaml>` | CLI smoke test | ✅ |
 
-Hardware smoke tests live in `tests/test_qpu.py` (marker `qpu`, deselected by default; run them with `pytest -m qpu`).
+## Phase 2 — Quantum simulation (milestone M2) ✅
 
-These items cannot be completed without QPU credentials and a budget (open question Q2).
-The code paths exist, but they are untested against real devices.
+| WP | Deliverable | Closed by | Status |
+|----|-------------|-----------|--------|
+| 2.1 | `QAOASimulator`: exact statevector QAOA, linear-ramp warm start | `tests/test_solvers.py`; report 02 | ✅ |
+| 2.2 | `QAOAQiskit`: Qiskit circuits on Aer (`backend.run`) | Qiskit statevector equals our statevector | ✅ |
+| 2.3 | `AnnealingSolver`: any dimod sampler; Ocean simulated-annealing stand-in | `tests/test_solvers.py`; reports 01, 03 | ✅ |
 
-| WP | Item | Needs | Status |
-|----|------|-------|--------|
-| 3.1 | Run `AnnealingSolver` against a real D-Wave QPU (`DWaveSampler`): verify the h/J range read from solver properties, chain-break rates, and the timing fields | D-Wave Leap token (`DWAVE_API_TOKEN`) and QPU minutes | ⛔ |
-| 3.2 | Calibrate the effective temperature on real hardware: the curve of β̂ against the scale κ, per graph shape | 3.1 | ⛔ |
-| 3.3 | Parallel embedding of several problems per QPU call (doc 04 §6) | 3.1; topology only available from the live solver | 🟡 designed, not implemented |
-| 3.4 | Run `QAOAQiskit` on IBM hardware: transpilation to heavy-hex, readout mitigation. IBM Runtime requires `SamplerV2` rather than `backend.run`, so a small adapter is needed (and `qiskit-ibm-runtime` added to the `gate` extra) | IBM Quantum account and token | ⛔ |
-| 3.5 | M3/M4 benchmark campaign (doc 06) | 3.1–3.4 and a dataset choice (Q1) | ⛔ |
+## Phase 3 — Real hardware (milestones M3 and M4)
 
-## Phase 4 — Extensions (milestone M5)
+Everything up to the device itself is implemented and tested offline. Hardware smoke tests are in
+`tests/test_qpu.py` (marker `qpu`; run with `pytest -m qpu`).
 
-| WP | Item | Status |
-|----|------|--------|
-| 4.1 | Multi-class one-hot encoding and the penalty bound of the paper's Proposition 11 | planned |
-| 4.2 | Class-conditional LF potentials (Q5) | planned |
-| 4.3 | QPBO / roof-duality persistency baseline | planned (needs a QPBO library or our own implementation) |
-| 4.4 | Learning β and b (prior-phase sampling) | the code path exists (`learn_b`, `learn_beta`); validation planned |
+| WP | Item | Offline validation | Needs | Status |
+|----|------|--------------------|-------|--------|
+| 3.1 | `QPUAnnealingSolver` (`qws.solvers.qpu`) on D-Wave **Advantage (Pegasus)**: explicit minorminer embedding, embedding cache, range-aware scaling including chains, `auto_scale` off, chain-break reporting, QPU timing attribution | Mock Pegasus P16 (`MockDWaveSampler`): `tests/test_qpu_mock.py`, report 05 | `DWAVE_API_TOKEN`; network access to D-Wave Leap | 🟡 |
+| 3.2 | Effective-temperature calibration on the device (β̂ against submit scale, per graph shape) | Recovered the mock's β_eff ≈ 4 from samples (report 05) | 3.1 | 🟡 |
+| 3.3 | Parallel embedding: several problems per QPU call | Implemented; capacity measured on mock P16 (report 05) | 3.1 | 🟡 |
+| 3.4 | IBM Quantum via **SamplerV2** (`QAOAQiskit(sampler=..., backend=...)`, `QAOAQiskit.ibm()`), with ISA transpilation | `StatevectorSampler` and Aer `SamplerV2` tests | IBM Quantum account and token | 🟡 |
+| 3.5 | M3/M4 benchmark campaign (doc 06) on hardware | Reports 02, 03, 05 define the protocol | 3.1–3.4 | ⛔ |
 
-## Simplifications made in v1 (documented deviations)
+## Phase 4 — Extensions (milestone M5) ✅
 
-- **Pairwise LFs vote only on graph edges:** $E_r \subseteq E$. Votes on non-adjacent
-  pairs would add couplings outside the site graph. The model supports them in
-  principle, but the LF interface does not yet.
-- **Symmetric potentials only** (Definition 1 of the paper). Correlation cliques are
-  supported with the agreement feature
-  $\phi_c(\lambda) = \#\{j<l \in c : \lambda_j = \lambda_l \neq 0\}$, which is invariant
-  under a vote flip.
-- **Strong-field fixing is applied to MAP only.** It is never applied to sampling
-  (doc 02 §6.1).
+| WP | Item | Closed by | Status |
+|----|------|-----------|--------|
+| 4.1 | **Multi-class** (`qws.multiclass`): Potts label model, one-hot QUBO with the Proposition-11 penalty, decoding with repair, Potts Gibbs and annealing, gradient, learning | `tests/test_multiclass.py` (exhaustive Prop. 11 check, brute-force gradient); report 11 | ✅ |
+| 4.2 | **Class-conditional LF potentials** (ω, ζ) | `tests/test_model.py` (brute-force posterior, prior and gradient); report 07 | ✅ |
+| 4.3 | **QPBO / roof duality** (`QPBOSolver`, `roof_dual`) | `tests/test_solvers.py` (persistency, bound); report 10 | ✅ |
+| 4.4 | **Learning β and b** with prior-phase sampling shared per graph shape | Report 06 | ✅ |
 
-## Next up (decided 2026-11-03, see open-questions R5–R13)
+## Phase 5 — Real data and the end task
 
-Work in this order:
+| WP | Item | Offline validation | Needs | Status |
+|----|------|--------------------|-------|--------|
+| 5.1 | **Oxford-IIIT Pet** (`qws.data.pet`): loader for the official layout, trimap binarization with an ignore band, resizing; generic natural-image LFs (`qws.lf.natural`); `dataset.kind: pet` | Generated dataset in the exact Pet layout (`qws.data.petlike`): `tests/test_data.py`, report 08 | Network access to `www.robots.ox.ac.uk` (currently refused by the environment's network policy), or the dataset placed on disk | 🟡 |
+| 5.2 | Learn β and b | Report 06 | — | ✅ |
+| 5.3 | Class-conditional LFs | Report 07 | — | ✅ |
+| 5.4 | **Downstream U-Net** (`qws.downstream`): noise-aware loss; end-task pipeline comparing training signals | `tests/test_downstream.py`; report 09 (Pet-format data) | 5.1 for real Pet results | 🟡 |
 
-| WP | Item | Depends on | Status |
-|----|------|------------|--------|
-| 5.1 | **Oxford-IIIT Pet** loader: binarize trimaps to foreground/background (boundary pixels are ignored in the metrics); generic LFs from colour, saliency and box priors; superpixel sites | download access to the dataset | planned |
-| 5.2 | **Learn β and b** (prior-phase sampling, shared prior per graph shape); validate identifiability on synthetic data, then on Pet | — | planned (code path exists) |
-| 5.3 | **Class-conditional LF potentials**: a general 3×2 table per LF; the prior marginal gains fields (paper Proposition 2), so the model term needs prior sampling | — | planned |
-| 5.4 | **Downstream trainer**: minimal U-Net with expected cross-entropy under the soft masks; end-task IoU on Pet; adds a `torch` optional extra | 5.1 | planned |
-| 3.1 | **D-Wave Advantage (Pegasus)** runs through `AnnealingSolver.dwave_qpu()`, with the token in `DWAVE_API_TOKEN`; hybrid solvers reported separately | Leap token | waiting for the token |
-| 3.4 | **IBM Quantum**: SamplerV2 adapter for `QAOAQiskit`; add `qiskit-ibm-runtime` to the `gate` extra | IBM account | waiting for the account |
+## How to finish the remaining items
+
+1. **D-Wave:**
+   - Add `DWAVE_API_TOKEN` as an environment secret, and allow the Leap hosts in the environment's network settings.
+   - Run `pytest -m qpu`, then `qws run` with `solver: {name: anneal_qpu}` (or `QPUAnnealingSolver.dwave()`).
+   - Repeat reports 03 and 05 with the real sampler.
+2. **IBM:**
+   - Save the account (`QiskitRuntimeService.save_account`) or set `QISKIT_IBM_TOKEN`, plus `QWS_IBM_BACKEND`.
+   - Run `pytest -m qpu`.
+3. **Oxford-IIIT Pet:**
+   - Allow `www.robots.ox.ac.uk`, then call `qws.data.download_pet("data/oxford-iiit-pet")`. Alternatively, copy
+     the extracted `images/` and `annotations/` folders there.
+   - Run reports 08–09 with `dataset: {kind: pet, root: data/oxford-iiit-pet}`.
+
+## Simplifications in the current version (documented deviations)
+
+- **Pairwise LFs vote only on site-graph edges** (E_r ⊆ E). This keeps the posterior graph equal to the site
+  graph, which matters for embedding (doc 09 §2).
+- **Pairwise LFs are symmetric** (no class-conditional pairwise potentials). Only unary LFs can be class-conditional.
+- **EM mode** supports the symmetric singleton model with fixed b and β only. Everything else uses gradient mode.
+- **Strong-field fixing applies to MAP only**, never to sampling (doc 02 §6.1).
+- **Multi-class learning** keeps b and β fixed and uses symmetric potentials.
+- **Domain-wall and binary (log) encodings** for multi-class (doc 07 §3) are not implemented. One-hot is the only
+  encoding.

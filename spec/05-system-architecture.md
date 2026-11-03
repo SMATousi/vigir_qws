@@ -17,6 +17,8 @@ are normative.
 
 ## 2. Modules
 
+> The complete, current module map (including `qpu`, `multiclass`, `data`, `downstream`) is in [doc 09 §1](09-implementation-notes.md). The tree below is the original v0.1 core.
+
 ```
 qws/
   ising/       # problem.py (IsingProblem), convert.py (QUBO / Ocean / Pauli), reduce.py (conditioning, strong-field fixing)

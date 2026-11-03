@@ -40,9 +40,19 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 
 def merge(base: dict, override: dict) -> dict:
+    """Recursive config merge. A solver spec that names a *different* solver replaces the
+    base spec entirely, so solver-specific options (e.g. Gibbs ``num_sweeps``) are never
+    passed to another backend."""
     out = copy.deepcopy(base)
     for k, v in (override or {}).items():
-        out[k] = merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+        base_v = out.get(k)
+        if isinstance(v, dict) and isinstance(base_v, dict):
+            if "name" in v and v.get("name") != base_v.get("name"):
+                out[k] = copy.deepcopy(v)
+            else:
+                out[k] = merge(base_v, v)
+        else:
+            out[k] = v
     return out
 
 

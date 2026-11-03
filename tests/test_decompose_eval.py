@@ -117,3 +117,13 @@ def test_cli_demo_and_run(tmp_path, capsys):
     cfg = tmp_path / "c.yaml"
     cfg.write_text("dataset: {n_images: 2, shape: [8, 8]}\ntrain: {epochs: 1}\nsolver: {name: sa, num_sweeps: 30}\n")
     assert main(["run", str(cfg)]) == 0
+
+
+def test_config_merge_replaces_solver_spec_on_name_change():
+    from qws.experiment import DEFAULT_CONFIG, merge
+
+    cfg = merge(DEFAULT_CONFIG, {"solver": {"name": "anneal_mock"}, "train": {"epochs": 3}})
+    assert cfg["solver"] == {"name": "anneal_mock"}
+    assert cfg["train"]["epochs"] == 3 and cfg["train"]["lr"] == DEFAULT_CONFIG["train"]["lr"]
+    same = merge(DEFAULT_CONFIG, {"solver": {"num_sweeps": 7}})
+    assert same["solver"] == {"name": "gibbs", "num_sweeps": 7}

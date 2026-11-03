@@ -1,0 +1,10 @@
+# The full D-Wave QPU path (explicit embedding, packing, range-aware scaling, calibration)
+# on MockDWaveSampler with a Pegasus graph. Replace anneal_mock by anneal_qpu on real hardware
+# (needs DWAVE_API_TOKEN; decision R6: Advantage / Pegasus).
+seed: 0
+dataset: {kind: synthetic, n_images: 4, shape: [16, 16]}
+model: {beta: 0.5}
+solver: {name: anneal_mock, topology_shape: 16}   # P16 = Advantage-size Pegasus
+calibrate: true
+map_solver: {name: sa, num_sweeps: 300}
+train: {epochs: 6, num_samples: 100}
