@@ -44,8 +44,11 @@ class CalibratedSampler(Solver):
     inverse temperature relative to the target problem approaches 1.
 
     Each call submits ``p.scaled(scale)``, estimates beta_hat of the returned samples
-    w.r.t. the unscaled ``p``, and updates ``scale <- scale / beta_hat**damping``,
-    clipped to ``[min_scale, max_scale]``. The device's coefficient bounds are enforced by
+    w.r.t. the unscaled ``p``, and updates ``scale <- scale / beta_hat**damping``.
+    Each update changes the scale by at most a factor ``max_step``. This matters because
+    beta_hat saturates at its cap when every spin is aligned with its local field (zero
+    temperature), and an unclipped step would then overshoot by orders of magnitude.
+    The scale stays within ``[min_scale, max_scale]``. The device's coefficient bounds are enforced by
     the inner solver; when the target is unreachable, the beta_hat history shows it.
     """
 
@@ -54,6 +57,7 @@ class CalibratedSampler(Solver):
     damping: float = 0.5
     min_scale: float = 1e-3
     max_scale: float = 1e3
+    max_step: float = 4.0
     history: list[dict[str, float]] = field(default_factory=list)
 
     name = "calibrated"
@@ -71,5 +75,6 @@ class CalibratedSampler(Solver):
         if finite:
             beta_hat = float(np.exp(np.mean(np.log(finite))))
             self.history.append({"scale": self.scale, "beta_hat": beta_hat})
-            self.scale = float(np.clip(self.scale / beta_hat**self.damping, self.min_scale, self.max_scale))
+            step = float(np.clip(beta_hat**self.damping, 1.0 / self.max_step, self.max_step))
+            self.scale = float(np.clip(self.scale / step, self.min_scale, self.max_scale))
         return out

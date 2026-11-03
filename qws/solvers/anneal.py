@@ -116,7 +116,13 @@ class AnnealingSolver(Solver):
 
 def simulated_annealing_stand_in(**kw: Any) -> AnnealingSolver:
     """Ocean's classical SimulatedAnnealingSampler behind the same interface: exercises
-    sign conversion, variable ordering and metadata without QPU access."""
+    sign conversion, variable ordering and metadata without QPU access.
+
+    By default neal chooses its inverse-temperature range from the problem's
+    coefficients, so rescaling the problem does not change the sample temperature.
+    Pass a fixed ``beta_range=(lo, hi)`` to mimic a device with a fixed physical
+    temperature, where the submit-time scale controls the effective temperature
+    (this is what temperature calibration relies on)."""
     from neal import SimulatedAnnealingSampler
 
     return AnnealingSolver(SimulatedAnnealingSampler(), **kw)

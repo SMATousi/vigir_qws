@@ -85,3 +85,12 @@ def test_inference_helpers(data):
     assert masks[0].shape == (d[0][1].n,) and set(np.unique(masks[0])) <= {-1, 1}
     mu = infer_marginals(params, d[:2], GibbsSampler(num_sweeps=20, seed=0), num_samples=50, polish_sweeps=2, seed=0)
     assert np.all((mu[0] >= 0) & (mu[0] <= 1))
+
+
+def test_calibration_step_is_bounded_at_zero_temperature(rng):
+    """Zero-temperature samples saturate beta_hat; the scale must not jump by orders of magnitude."""
+    p = random_problem(9, rng, density=0.4, scale=0.5)
+    cal = CalibratedSampler(_MisTempered(200.0), damping=1.0)
+    cal.sample([p], 2000)
+    assert cal.history[-1]["beta_hat"] > 50
+    assert cal.scale == pytest.approx(0.25)

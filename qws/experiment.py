@@ -94,7 +94,7 @@ def run_experiment(config: dict | None = None) -> dict[str, Any]:
         "learned_params": result.params.to_dict(),
         "theta_error": float(np.abs(result.params.theta - true.theta).max()),
         "thetaP_error": float(np.abs(result.params.thetaP - true.thetaP).max()) if true.q else None,
-        "iou": {"majority_vote": mean_iou(majority), "independent_model": mean_iou(independent),
+        "iou": {"site_oracle": mean_iou([im.y for im in images]), "majority_vote": mean_iou(majority), "independent_model": mean_iou(independent),
                 "structured_map": mean_iou(masks)},
         "ece_structured": float(np.mean([ece(im.sites.to_pixels(mu), im.mask) for mu, im in zip(marg, images)])),
         "history": result.history,
