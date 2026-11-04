@@ -62,7 +62,7 @@ environment:
   - Save the account (or set `QISKIT_IBM_TOKEN`) and `QWS_IBM_BACKEND`.
   - Use `qws.solvers.qaoa.QAOAQiskit.ibm()`.
 - **Oxford-IIIT Pet:**
-  - Allow `www.robots.ox.ac.uk`, then run `python -c "import qws.data as d; d.download_pet('data/oxford-iiit-pet')"`.
+  - Allow `www.robots.ox.ac.uk` and `thor.robots.ox.ac.uk` (the download redirects there), then run `python -c "import qws.data as d; d.download_pet('data/oxford-iiit-pet')"`.
     Alternatively, place `images/` and `annotations/` there.
   - Use `dataset: {kind: pet, root: data/oxford-iiit-pet}`.
 

@@ -180,8 +180,8 @@ or `solver: {name: anneal_qpu}` in a config.
 - Trimap 1 → +1 (pet), 2 → −1, 3 → 0 (ignore).
 - Images are resized so the longer side is 128 px: bilinear for images, nearest-neighbour for trimaps, so
   labels never blend.
-- `download_pet` fetches the two archives from `www.robots.ox.ac.uk`. That host is currently refused by the
-  environment's network policy.
+- `download_pet` fetches the two archives (about 800 MB) from `www.robots.ox.ac.uk`, which redirects to
+  `thor.robots.ox.ac.uk`; both hosts must be allowed by the network policy.
 
 **Sites.** SLIC superpixels: about 150–200 requested, compactness 10.
 

@@ -101,9 +101,9 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 - **No real quantum hardware was used.** Quantum paths ran on simulators and mocks (see Environment).
   Hardware runs are roadmap Phase 3 ([spec/08](../spec/08-roadmap.md)) and need a D-Wave Leap token and an
   IBM Quantum account.
-- **No real images were used.** The Oxford-IIIT Pet hosts are blocked by this environment's network
-  policy. Reports 08–09 use a generated dataset in the exact Pet file layout to exercise the real-image
-  pipeline; they are not Pet results.
+- **Real images:** reports 13–14 use the real Oxford-IIIT Pet dataset. Reports 08–09 ran earlier, while its
+  hosts were blocked, on a generated dataset in the exact Pet file layout; they are not Pet results. Report 12
+  uses the real ViGIR ephemeral-gully dataset.
 - **Synthetic votes** in reports 01–07 follow the label model's own generative law, which is a best case.
 - **Timings are CPU wall-clock times** on a shared cloud container. They are indicative only.
 """

@@ -102,6 +102,8 @@ Implementation details are in [doc 09](09-implementation-notes.md).
 - **Rationale:** it exercises every real-image component (JPEG, PNG trimaps with an ignore band, split files,
   resizing, superpixels, generic LFs, ignore-masked metrics) end to end. Reports 08–09 say explicitly that these
   are not Pet results.
+- **Update:** the hosts were later allowed. Reports 13–14 repeat 08–09 on the real dataset
+  (`scripts/pet_experiment.py`).
 - **Where:** `qws/data/petlike.py`.
 
 ### D13. Class-conditional parametrization (α, θ, ω, ζ); pairwise LFs stay symmetric

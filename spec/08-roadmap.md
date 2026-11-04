@@ -13,9 +13,9 @@ Status markers:
 - 🟡 implemented and validated offline; needs real hardware or real data for the final run
 - ⛔ blocked on access (credentials, network) that the user must provide
 
-**Current state:** everything that can be done without a D-Wave Leap token, an IBM Quantum account, or
-network access to the Oxford-IIIT Pet hosts is done. The test suite has 96 tests; 2 more real-hardware tests
-are opt-in.
+**Current state:** everything that can be done without a D-Wave Leap token or an IBM Quantum account is done,
+including the real Oxford-IIIT Pet runs (reports 13–14) and the ephemeral-gully branch (report 12). The test
+suite has 106 tests; 2 more real-hardware tests are opt-in.
 
 ## Phase 1 — Classical reference implementation (milestone M1) ✅
 
@@ -66,10 +66,10 @@ Everything up to the device itself is implemented and tested offline. Hardware s
 
 | WP | Item | Offline validation | Needs | Status |
 |----|------|--------------------|-------|--------|
-| 5.1 | **Oxford-IIIT Pet** (`qws.data.pet`): loader for the official layout, trimap binarization with an ignore band, resizing; generic natural-image LFs (`qws.lf.natural`); `dataset.kind: pet` | Generated dataset in the exact Pet layout (`qws.data.petlike`): `tests/test_data.py`, report 08 | Network access to `www.robots.ox.ac.uk` (currently refused by the environment's network policy), or the dataset placed on disk | 🟡 |
+| 5.1 | **Oxford-IIIT Pet** (`qws.data.pet`): loader for the official layout, trimap binarization with an ignore band, resizing; generic natural-image LFs (`qws.lf.natural`); `dataset.kind: pet` | Generated dataset in the exact Pet layout (`qws.data.petlike`): `tests/test_data.py`, report 08 | — (real-data runs: report 13) | ✅ |
 | 5.2 | Learn β and b | Report 06 | — | ✅ |
 | 5.3 | Class-conditional LFs | Report 07 | — | ✅ |
-| 5.4 | **Downstream U-Net** (`qws.downstream`): noise-aware loss; end-task pipeline comparing training signals | `tests/test_downstream.py`; report 09 (Pet-format data) | 5.1 for real Pet results | 🟡 |
+| 5.4 | **Downstream U-Net** (`qws.downstream`): noise-aware loss; end-task pipeline comparing training signals | `tests/test_downstream.py`; report 09 (Pet-format data) | — (real-data runs: report 14) | ✅ |
 
 ## Phase 6 — Ephemeral gullies on the ViGIR EG dataset (spec doc 11)
 
@@ -95,7 +95,7 @@ Everything up to the device itself is implemented and tested offline. Hardware s
    - Save the account (`QiskitRuntimeService.save_account`) or set `QISKIT_IBM_TOKEN`, plus `QWS_IBM_BACKEND`.
    - Run `pytest -m qpu`.
 3. **Oxford-IIIT Pet:**
-   - Allow `www.robots.ox.ac.uk`, then call `qws.data.download_pet("data/oxford-iiit-pet")`. Alternatively, copy
+   - Done (reports 13–14). To reproduce: allow `www.robots.ox.ac.uk` and `thor.robots.ox.ac.uk`, then call `qws.data.download_pet("data/oxford-iiit-pet")`. Alternatively, copy
      the extracted `images/` and `annotations/` folders there.
    - Run reports 08–09 with `dataset: {kind: pet, root: data/oxford-iiit-pet}`.
 

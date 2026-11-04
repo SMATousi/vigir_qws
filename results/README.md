@@ -14,7 +14,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 
 ## Environment (last run)
 
-- Generated: 2026-11-04 22:13 UTC
+- Generated: 2026-11-04 23:37 UTC
 - Python 3.13.16 on x86_64 (Linux)
 - Packages: numpy 2.5.4, scipy 1.18.1, scikit-image 0.26.0, PyMaxflow 1.3.2, dimod 0.12.23, dwave-neal 0.6.0, dwave-system 1.36.0, minorminer 0.2.22, qiskit 2.6.1, qiskit-aer 0.18.2, qiskit-ibm-runtime 0.51.0, torch 2.15.0
 - Hardware: CPU only. **No real QPU was used.** `anneal_sim` is D-Wave Ocean's classical `SimulatedAnnealingSampler`; `anneal_mock` is `MockDWaveSampler` with a Pegasus topology and a fixed-temperature simulated-annealing substitute.
@@ -35,14 +35,16 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 | [10 — QPBO](10-qpbo.md) | How much of a frustrated posterior is decided exactly by roof duality? | Realistic posteriors: 100% labeled (MAP solved exactly by max-flow); weak LFs at θᴾ = 2: 60%; field-free spin glass: 0%; persistency verified in every case |
 | [11 — Multi-class](11-multiclass.md) | Does the K-class model work, and what does one-hot encoding cost? | Accuracy 0.927 (structured) vs. 0.708 (independent) / 0.718 (majority); one-hot QUBO needs more reads (17/20 → 20/20 optima with 20 → 100 reads) |
 | [12 — Ephemeral gullies](12-gully.md) | Can weak LFs + location labels segment EGs and detect EG locations? | Test location AUC 0.825 (structured largest component) vs. 0.825 (independent) / 0.723 (majority) / 0.684 (terrain alone); model chosen by grouped CV on dev; no pixel GT yet |
+| [13 — Real Oxford-IIIT Pet](13-pet-pipeline.md) | Does the structured label model help on real photographs? | 200 images × 3 seeds: structured IoU 0.616 vs. 0.576 (independent), 0.494 (majority); superpixel oracle 0.963 |
+| [14 — Downstream U-Net on real Pet](14-pet-downstream.md) | Do better weak labels give a better network on real images? | Training-label IoU 0.63 (structured) vs. 0.58 / 0.50; U-Net test IoU 0.62 / 0.62 / 0.49 (GT-trained 0.74) |
 
 ## Scope and caveats
 
 - **No real quantum hardware was used.** Quantum paths ran on simulators and mocks (see Environment).
   Hardware runs are roadmap Phase 3 ([spec/08](../spec/08-roadmap.md)) and need a D-Wave Leap token and an
   IBM Quantum account.
-- **No real images were used.** The Oxford-IIIT Pet hosts are blocked by this environment's network
-  policy. Reports 08–09 use a generated dataset in the exact Pet file layout to exercise the real-image
-  pipeline; they are not Pet results.
+- **Real images:** reports 13–14 use the real Oxford-IIIT Pet dataset. Reports 08–09 ran earlier, while its
+  hosts were blocked, on a generated dataset in the exact Pet file layout; they are not Pet results. Report 12
+  uses the real ViGIR ephemeral-gully dataset.
 - **Synthetic votes** in reports 01–07 follow the label model's own generative law, which is a best case.
 - **Timings are CPU wall-clock times** on a shared cloud container. They are indicative only.

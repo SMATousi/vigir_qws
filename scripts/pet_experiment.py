@@ -83,9 +83,14 @@ Pairwise colour-contrast LF: learned θᴾ = {thP:.2f}.
 - On real photographs, the structured model reaches IoU {mean[3]:.3f}, against {mean[2]:.3f} for the
   independent model and {mean[1]:.3f} for majority vote. It closes {100 * gap:.0f}% of the gap between the
   independent model and the superpixel oracle.
-- The remaining gap reflects the generic LFs: they encode a "centred object, distinct from the border" prior,
-  which fails for off-centre pets, pets touching the border, and backgrounds coloured like the animal.
-- Compare report 08 (generated data) for the same pipeline; the qualitative ordering is the same.
+- The label model ranks the LFs correctly without labels: saliency, the weakest LF, gets by far the lowest
+  weight. It is, however, **overconfident**: the implied accuracies σ(2θ) exceed the measured ones by about
+  0.02–0.11 (table above), and the expected calibration error of the structured marginals is {mean[4]:.3f}.
+- The remaining gap is most likely due to the generic LFs themselves. They encode a "centred object, distinct
+  from the border" prior, which fails for off-centre pets, pets touching the border, and backgrounds coloured
+  like the animal. Better LFs, not a better solver, are the lever on this dataset.
+- Compared with report 08 (generated data, same pipeline), the ordering structured > independent > majority
+  holds, but the margins are smaller on real photographs.
 """
     write("13-pet-pipeline.md", "13 — Label model on real Oxford-IIIT Pet images", body)
     register({"13-pet-pipeline.md": {
@@ -137,6 +142,11 @@ For reference, the label model applied directly (transductively) to the test ima
 - U-Net test IoU: structured {s['structured_soft']['test_iou']:.3f}, independent
   {s['independent_soft']['test_iou']:.3f}, majority {s['majority_hard']['test_iou']:.3f}; trained on ground
   truth {s['ground_truth']['test_iou']:.3f}.
+- Better training labels do not carry over to the network here: structured and independent soft labels give
+  the same U-Net test IoU, even though the structured training labels are better. Majority-vote labels are
+  clearly worse, and ground truth is well ahead. The U-Net trained on structured labels matches the label
+  model applied directly to the test images ({out['label_model_direct_test_iou']:.3f}), so it generalizes the
+  weak labels to new images without losing quality.
 - The network is small and trained on CPU at 64 px, so absolute numbers are far from the state of the art. The
   comparison between training signals is what this report measures.
 """

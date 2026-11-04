@@ -356,8 +356,7 @@ Pairwise colour-contrast LF: learned θᴾ = {thP:.2f}.
 - Without labels, the label model correctly ranks the LFs. It assigns high weight to the reliable priors and
   near-zero weight to saliency, which is close to chance on these images. This is the core promise of data
   programming, working on real-format images.
-- Next step (blocked by network policy): run the same command on the real dataset, with `kind: pet` and the
-  path to the downloaded data.
+- The same pipeline on the real Oxford-IIIT Pet images: report 13 (and report 14 for the downstream U-Net).
 """
     write("08-petlike-pipeline.md", "08 — Real-image pipeline on Pet-format data", body)
     register({"08-petlike-pipeline.md": {
