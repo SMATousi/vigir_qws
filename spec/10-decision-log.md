@@ -244,3 +244,10 @@ Implementation details are in [doc 09](09-implementation-notes.md).
 - When a variant's MAP is empty at every location, its AUC is exactly 0.5 because all scores tie. Report 12 shows
   the fraction of locations with a non-empty MAP next to every ablation, so this is not mistaken for chance-level
   segmentation.
+
+### D32. Permanence and persistent-vegetation LFs are excluded from the selected gully model
+- **Context:** the premise "ephemeral ⇒ not visible at the same place in ≥ 5 of 6 years" is contradicted by EGs
+  that re-form in the same flow path after tillage.
+- **Evidence:** dev cross-validation (grouped by cluster); the core LF set wins in every fold (report 12).
+- **Decision:** both LFs stay in `qws.gully.lfs` (they may help in other regions), but the experiment selects the
+  core set.

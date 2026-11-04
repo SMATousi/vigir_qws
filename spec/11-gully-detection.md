@@ -97,7 +97,8 @@ not tuned on labels.
 
 **Caveat on the last two.** EGs often **re-form in the same flow path** after tillage, so "permanent" can also
 describe a recurring gully. Whether these two LFs help is therefore decided by dev cross-validation (D28), not
-assumed. Report 12 gives the outcome.
+assumed. **Outcome: they hurt.** The core LF set without them wins in every cross-validation fold (report 12),
+so they are kept in the library but not in the selected model.
 
 Terrain LFs vote identically in every year. Whether a gully is *visible* in a given year comes from the imagery
 LFs and the temporal coupling.
@@ -153,6 +154,11 @@ independent, so every quantity is exact:
 **Stage 2: structured posterior.** The stage-1 parameters, with smoothness β and temporal weight τ. Optional
 sampling-based training of the symmetric parameters (`GullyConfig.epochs`) is implemented. It uses clamps and
 rejection for MIL (`Trainer.fit(clamps=..., min_positive=...)`), but it is off by default.
+
+**Finding: the single-pixel MIL constraint is nearly vacuous.** With 98,304 sites per location and per-pixel EG
+probabilities of a few 10⁻⁴, a positive location is already expected to contain dozens of EG pixels, so
+P(none) ≈ 0 and conditioning on "at least one" barely changes anything. Report 12 gives the measured values and
+the "no MIL" ablation. Constraints that would carry information are listed as open question Q20.
 
 **Model selection (D28).** The LF set, β ∈ {0, 0.5, 1, 2} and τ ∈ {0.25, 1} are chosen by **3-fold
 cross-validation within dev, grouped by geographic cluster**. The criterion is the mean validation AUC of the

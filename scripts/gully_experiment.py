@@ -159,6 +159,16 @@ def main() -> None:
     t_stage1 = time.perf_counter() - t0
     params = warm.copy()
     params.beta = cfg.beta
+    # MIL diagnostics: expected EG pixels per positive dev location under stage 1, and P(no EG pixel)
+    exp_pos, log_none = [], []
+    for it in dev:
+        if it.loc.label != 1:
+            continue
+        h = warm.b + it.lfo.L.astype(float) @ warm.theta + (it.lfo.L != 0).astype(float) @ warm.omega
+        exp_pos.append(float(np.sum(0.5 * (1 + np.tanh(h)))))
+        log_none.append(float(np.sum(-np.logaddexp(0.0, 2.0 * h))))
+    mil_diag = {"median_expected_eg_pixels": float(np.median(exp_pos)), "max_log10_p_none": float(np.max(log_none) / np.log(10))}
+    fold_sd = float(np.mean([np.std([r["auc_cc"] for r in cv if (r["variant"], r["beta"], r["tau"]) == k]) for k in keys]))
     t0 = time.perf_counter()
     preds = infer(test, params, warm, cfg)
     t_infer = time.perf_counter() - t0
@@ -217,7 +227,7 @@ def main() -> None:
     raw = {"split": {k: (v if not isinstance(v, list) else len(v)) for k, v in split.items()}, "config": vars(cfg),
            "selected": {"variant": best_variant, "beta": best_beta, "tau": best_tau}, "lf_names": names,
            "stage1_params": warm.to_dict(), "cv": cv, "cv_mean": {str(k): v for k, v in cv_mean.items()},
-           "test_eval": ev, "test_by_region": region,
+           "test_eval": ev, "test_by_region": region, "mil_diagnostics": mil_diag, "cv_fold_sd": fold_sd,
            "ablations": {k: {"auc_largest_cc": v[0], "auc_frac": v[1], "nonempty_map_fraction": v[2]} for k, v in abl.items()},
            "figure_tiles": fig_tiles, "timing_s": {"prepare": t_prep, "cv": t_cv, "stage1": t_stage1,
                                                    "test_inference": t_infer, "total": time.perf_counter() - t_all}}
@@ -298,6 +308,16 @@ highest-scoring negative test locations.
 
 ## Notes
 
+- **Model selection noise.** The mean fold-to-fold standard deviation of the CV AUC is {fold_sd:.3f}. Configurations
+  whose CV AUCs differ by less than that are not reliably distinguished. In particular, the effect of β (spatial
+  smoothing) on *location detection* is not resolved by this data. Spatial and temporal couplings change the
+  masks, connecting gullies across gaps and years, more than they change location-level ranking.
+- **The multiple-instance constraint is vacuous at this scale.** Under stage 1, a positive dev location is expected
+  to contain a median of {mil_diag['median_expected_eg_pixels']:.0f} EG pixels, and P(no EG pixel at all) ≤
+  10^{mil_diag['max_log10_p_none']:.0f}. The constraint "at least one EG pixel among 98,304" therefore barely
+  changes the posterior; compare the "no MIL constraint" ablation. An informative location-level constraint would
+  need to be stronger, for example "at least one connected component of length ≥ k" or a calibrated count
+  likelihood (open question Q20).
 - The regions differ markedly: training-free single-LF AUCs are much lower on dev than on test. Cross-validation
   numbers on dev are therefore lower than the test numbers, and they should not be compared directly.
 - **Pixel-level quality is not measured yet.** Pixel IoU and ±2 px tolerant precision and recall are computed

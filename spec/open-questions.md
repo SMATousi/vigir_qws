@@ -16,6 +16,7 @@ entry to *Resolved*.
 | Q17 | Gully: can your lab annotate about 30–50 positive test locations (QGIS lines per year), so pixel IoU can be measured? Export: `scripts/gully_export_annotation.py` | 11 §8 | Location-level evaluation only |
 | Q18 | Gully: the README mentions separate validation and test JSONs from the WACV paper. Should the paper's split replace our spatially blocked split for comparability? | 11 §1 | Our split (G2) |
 | Q19 | Gully: should we add learned LFs (for example a small CNN trained on stage-1 soft labels, then fed back as an LF) or more terrain LFs (TWI, stream-power index)? | 11 §10 | Threshold LFs only |
+| Q20 | Gully: replace the vacuous "at least one EG pixel" MIL constraint with an informative one, such as "at least one connected EG component of length ≥ k" (a non-local constraint; sampling with rejection) or a noisy-OR location likelihood over components? | 11 §6, report 12 | Exact single-pixel MIL (barely informative at 98k sites) |
 | Q9 | What is the publication plan, and which comparison results must be reproducible for the paper? (License resolved: R13) | 06 §4 | — |
 
 ## Resolved
