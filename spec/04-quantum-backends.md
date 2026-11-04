@@ -1,5 +1,7 @@
 # 04 — Quantum (and Classical) Backends
 
+> **As built:** see [doc 09 §4–5, §10](09-implementation-notes.md) for the implemented scaling, embedding, packing and QAOA details, and [doc 10](10-decision-log.md) D7–D10 and D18 for the rationale.
+
 Every solver implements one interface (doc 05 §3) and consumes the
 `IsingProblem` defined in doc 02. This document specifies how each backend
 family works and how problems larger than the hardware are handled.
@@ -10,13 +12,15 @@ family works and how problems larger than the hardware are handled.
 |---------|--------|-----------|-----|
 | `exact` | Classical | minimize, sample (exact Boltzmann), marginals, log Z | Ground truth for N ≲ 25; unit tests |
 | `graphcut` | Classical | minimize (submodular only; MUST refuse when any $J<0$) | Exact MAP reference for ferromagnetic problems |
-| `qpbo` | Classical | minimize (partial) | Persistency preprocessing; frustrated MAP baseline |
+| `qpbo` | Classical | minimize (persistent part exact, remainder completed) | Persistency preprocessing; frustrated MAP baseline. Implemented in `solvers/graphcut.py` (report 10) |
 | `sa` | Classical | minimize, sample | Simulated-annealing baseline |
 | `gibbs` | Classical | sample (persistent chains), polish | MCMC baseline; quantum-seeded polishing (doc 03 §4) |
-| `anneal_qpu` | Quantum annealing | minimize, sample | Primary quantum backend |
+| `anneal_qpu` | Quantum annealing (D-Wave Advantage, decision R6) | minimize, sample | Primary quantum backend: `QPUAnnealingSolver.dwave()` in `solvers/qpu.py` (explicit embedding, cache, parallel packing; doc 09 §4) |
+| `anneal_mock` | Same path on `MockDWaveSampler` (Pegasus) | minimize, sample | Offline validation of the full QPU path (report 05) |
+| `anneal_sim` | Ocean SDK + classical sampler | minimize, sample | Exercises the full annealing interface (signs, ordering, metadata) without QPU access |
 | `anneal_hybrid` | Vendor hybrid solver | minimize | Large-problem reference; reported separately, never counted as a "pure QPU" result |
 | `qaoa_sim` | Gate-based, simulated | minimize, seed sampling | Development and small-N studies |
-| `qaoa_qpu` | Gate-based hardware | minimize, seed sampling | Small subproblems on real devices |
+| `qaoa_qiskit` | Gate-based (Qiskit: Aer `backend.run`, or any SamplerV2 incl. IBM Runtime, decision R7) | minimize, seed sampling | Small subproblems on real devices; `QAOAQiskit.ibm()` |
 
 Quantum SDK dependencies MUST be optional extras, so the classical core
 installs without them.

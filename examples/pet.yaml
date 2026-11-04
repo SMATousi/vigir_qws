@@ -1,0 +1,22 @@
+# Oxford-IIIT Pet (decision R5). Needs the dataset on disk:
+#   python -c "import qws.data as d; d.download_pet('data/oxford-iiit-pet')"   (requires network access)
+# or copy the official images/ and annotations/ folders to data/oxford-iiit-pet.
+# Offline, use kind: petlike to run the same pipeline on generated Pet-layout data.
+seed: 0
+dataset:
+  kind: pet              # pet | petlike
+  root: data/oxford-iiit-pet
+  split: trainval
+  n_images: 50
+  max_side: 128          # images resized so the longer side is 128 px
+  n_segments: 200        # SLIC superpixels per image
+model:
+  beta: 0.5
+solver: {name: gibbs, num_sweeps: 50}
+map_solver: {name: sa, num_sweeps: 300}
+train:
+  epochs: 20
+  num_samples: 100
+  learn_beta: false      # R8: set true to learn beta (and learn_b for the class bias)
+  class_conditional: false  # R9: set true to learn class-dependent coverage / vote bias
+output: results/pet_run.json

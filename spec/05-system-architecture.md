@@ -1,7 +1,7 @@
 # 05 — System Architecture
 
-This is a proposed layout. Names may change during M1, but the module
-boundaries and the solver interface are normative.
+This is the layout as built in v0.1. The module boundaries and the solver interface
+are normative.
 
 ## 1. Language and packaging
 
@@ -17,20 +17,23 @@ boundaries and the solver interface are normative.
 
 ## 2. Modules
 
+> The complete, current module map (including `qpu`, `multiclass`, `data`, `downstream`) is in [doc 09 §1](09-implementation-notes.md). The tree below is the original v0.1 core.
+
 ```
 qws/
-  lf/          # LF interfaces (UnaryLF, PairwiseLF), applying LFs → sparse Λ, Π; lifting to superpixels
-  graph/       # site construction (pixel grid, superpixels), adjacency + affinities w_ik, site↔pixel maps
-  model/       # LabelModel: parameters θ, potentials, closed-form moments, warm start, projection
-  ising/       # IsingProblem, builders (posterior/prior), QUBO & Pauli conversion, conditioning, scaling, fixing
-  solvers/     # Solver protocol + backends: exact, graphcut, qpbo, sa, gibbs, anneal_qpu, anneal_hybrid, qaoa_*
-  decompose/   # tiling, block-coordinate MAP, block Gibbs, multiscale, parallel-embedding packer
-  learn/       # gradient estimators, training loop, EM mode, temperature estimation/correction
-  eval/        # metrics, synthetic data generator, benchmark runner, result store
-  io/          # dataset loaders, result serialization
+  ising/       # problem.py (IsingProblem), convert.py (QUBO / Ocean / Pauli), reduce.py (conditioning, strong-field fixing)
+  graph/       # sites.py: pixel grid, SLIC superpixels, region-adjacency graph, contrast weights
+  lf/          # base.py (interfaces, apply_lfs, lift_votes), library.py (generic example LFs)
+  model/       # params.py (LabelModelParams), label_model.py (Ising builders, moments, gradient, warm start)
+  solvers/     # base.py, exact.py, mcmc.py (gibbs, sa, polish), graphcut.py, anneal.py (Ocean), qaoa.py
+  decompose/   # tiling.py: grid/BFS tiles, block-coordinate-descent MAP, block Gibbs
+  learn/       # optim.py (Adam), temperature.py (PL estimator, CalibratedSampler), trainer.py
+  eval/        # synthetic.py, metrics.py, benchmark.py
+  io.py        # JSON result store
+  experiment.py, cli.py   # config-driven runs: `qws demo`, `qws run <config.yaml>`
 ```
 
-**Dependency direction:**
+**Dependency direction** (the trainer additionally imports `solvers` for polishing):
 
 ```
 lf → graph → model → ising → solvers → decompose → learn → eval

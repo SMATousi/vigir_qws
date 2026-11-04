@@ -57,6 +57,18 @@ parameters$)$, never on the votes. All images that share a graph shape (for
 example, equal-size pixel grids) share one prior problem per step. The
 implementation SHOULD sample it once per step and reuse the samples.
 
+### 2.3 As implemented: learned b, β and class-conditional LFs
+
+The v1 simplification in §2.1 is the default, but no longer the only mode.
+
+- Setting `learn_b` / `learn_beta` adds the prior-phase moments to the gradient (decision R8; report 06).
+- Setting `class_conditional` learns ω (class-dependent coverage) and ζ (vote bias) per unary LF
+  (decision R9; report 07).
+
+In both cases the model terms are computed by the tower property, with the prior marginals P(y_i = ±1) from
+samples of the prior Ising model. That model gains the field Σ_c ½ log(Z_c(+1)/Z_c(−1)) (paper Proposition 2).
+The formulas are in [doc 09 §3](09-implementation-notes.md).
+
 ## 3. Algorithm
 
 ```

@@ -1,7 +1,6 @@
-# 07 — Multi-class Extension (Planned, v2)
+# 07 — Multi-class Extension
 
-**Status:** design sketch only. Its purpose is to make sure the binary
-design in docs 01–05 does not block this extension.
+**Status:** implemented in `qws/multiclass/` (roadmap 4.1): Potts label model, one-hot QUBO with the Proposition-11 penalty, decoding with repair, Potts Gibbs and annealing, gradient and learning. Results are in [report 11](../results/11-multiclass.md) and implementation details in [doc 09 §9](09-implementation-notes.md). Only the one-hot encoding is implemented (§3 alternatives are future work; decision D17).
 
 ## 1. Model
 

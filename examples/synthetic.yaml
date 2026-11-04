@@ -1,0 +1,29 @@
+# Synthetic end-to-end experiment. Any key omitted falls back to qws.experiment.DEFAULT_CONFIG.
+seed: 0
+dataset:
+  kind: synthetic
+  n_images: 8
+  shape: [16, 16]
+  sites: grid            # or: superpixel (with n_segments)
+  smoothness: 3.0
+  true_params:           # generating LF parameters (symmetric potentials)
+    theta: [1.0, 0.6, 0.3, 0.8]
+    alpha: [0.5, 0.0, -0.5, 0.2]
+    thetaP: [1.0]        # one pairwise "same/different" LF -> frustrated couplings
+    alphaP: [0.0]
+model:
+  beta: 0.5              # smoothness, fixed in v1 (open question Q4)
+solver:                  # sampler used for learning and soft masks
+  name: gibbs            # exact | gibbs | sa | anneal_sim | anneal_qpu | qaoa_sim | qaoa_qiskit
+  num_sweeps: 100
+map_solver:              # ground-state solver for hard masks (graphcut refuses frustrated problems)
+  name: sa
+  num_sweeps: 300
+calibrate: false         # wrap the sampler in pseudo-likelihood temperature calibration
+train:
+  epochs: 20
+  lr: 0.05
+  num_samples: 100
+  polish_sweeps: 0       # quantum-seeded Gibbs polishing
+  mode: gradient         # or: em
+output: results/synthetic.json
