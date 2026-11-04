@@ -4,4 +4,4 @@ __pycache__/
 results/*.tmp
 .pytest_cache/
 *.pdf
-data/
+/data/
