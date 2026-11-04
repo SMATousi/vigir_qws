@@ -13,6 +13,9 @@ entry to *Resolved*.
 | Q14 | Network access: allow `www.robots.ox.ac.uk` (Oxford-IIIT Pet download) and the D-Wave Leap / IBM Quantum endpoints in the environment's network policy, or place the Pet data on disk? | 08 Phase 3/5 | Pet and hardware runs wait for this |
 | Q15 | Multi-class encoding beyond one-hot: implement the domain-wall encoding (K − 1 qubits per site, fewer infeasible states)? | 07 §3, report 11 | One-hot only |
 | Q16 | Chain strength and annealing time on the real Advantage: tune per graph shape, or keep the defaults (csf 1.5, default anneal)? | 09 §4, D10 | Defaults; tune in roadmap 3.1 |
+| Q17 | Gully: can your lab annotate about 30–50 positive test locations (QGIS lines per year), so pixel IoU can be measured? Export: `scripts/gully_export_annotation.py` | 11 §8 | Location-level evaluation only |
+| Q18 | Gully: the README mentions separate validation and test JSONs from the WACV paper. Should the paper's split replace our spatially blocked split for comparability? | 11 §1 | Our split (G2) |
+| Q19 | Gully: should we add learned LFs (for example a small CNN trained on stage-1 soft labels, then fed back as an LF) or more terrain LFs (TWI, stream-power index)? | 11 §10 | Threshold LFs only |
 | Q9 | What is the publication plan, and which comparison results must be reproducible for the paper? (License resolved: R13) | 06 §4 | — |
 
 ## Resolved

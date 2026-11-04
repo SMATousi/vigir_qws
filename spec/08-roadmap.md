@@ -71,6 +71,20 @@ Everything up to the device itself is implemented and tested offline. Hardware s
 | 5.3 | Class-conditional LFs | Report 07 | — | ✅ |
 | 5.4 | **Downstream U-Net** (`qws.downstream`): noise-aware loss; end-task pipeline comparing training signals | `tests/test_downstream.py`; report 09 (Pet-format data) | 5.1 for real Pet results | 🟡 |
 
+## Phase 6 — Ephemeral gullies on the ViGIR EG dataset (spec doc 11)
+
+| WP | Item | Closed by | Status |
+|----|------|-----------|--------|
+| 6.1 | Dataset loader and spatially blocked split (G2, G7, G10) | `tests/test_gully.py` | ✅ |
+| 6.2 | USGS 3DEP 1 m terrain: index, windowed reads, hydrology, products (G4, G5) | All 621 locations fetched; hydrology tests | ✅ |
+| 6.3 | Gully LFs (terrain, imagery, physics consistency, permanence) | `tests/test_gully.py`; report 12 | ✅ |
+| 6.4 | Spatiotemporal orientation-aware site graph (G1, G6) | `tests/test_gully.py` | ✅ |
+| 6.5 | Stage 1 exact MIL label model with clamps (G3, G8); stage-2 structured inference; grouped-CV model selection | `tests/test_gully.py`; report 12 | ✅ |
+| 6.6 | Location-level evaluation with baselines and ablations | Report 12 | ✅ |
+| 6.7 | Pixel-annotation format, export and metrics (G9) | `tests/test_gully.py` | ✅ (tooling) |
+| 6.8 | Pixel-level evaluation | Needs annotations from the lab (Q17) | ⛔ |
+| 6.9 | Gully posteriors on the D-Wave path (tiles via decomposition; sampling for soft labels) | Needs a Leap token (Phase 3) | ⛔ |
+
 ## How to finish the remaining items
 
 1. **D-Wave:**

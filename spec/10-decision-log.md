@@ -172,3 +172,75 @@ Implementation details are in [doc 09](09-implementation-notes.md).
   and treat it as a failed attempt. Real-QPU runs would otherwise fail at submission, after spending
   programming time.
 - **Where:** `QPUAnnealingSolver.embed`.
+
+## Ephemeral-gully branch (spec doc 11)
+
+### Owner decisions (2026-11-04)
+
+| ID | Decision | Consequence |
+|----|----------|-------------|
+| G1 | Output per-year masks **and** a location-level union, with the 6 years coupled by temporal edges | Spatiotemporal site graph (doc 11 §5) |
+| G2 | **Spatially blocked** dev/test split | Geographic 2 km clusters, balanced by seeded random search (doc 11 §1) |
+| G3 | Location labels as **constraints**: negatives clamped to background, positives "at least one EG pixel" (MIL) | Exact clamps and MIL in stage 1; clamp and rejection support in `Trainer` |
+| G4 | Use **USGS 3DEP** elevation | `qws.data.dem3dep` reads 1 m DEMs from the public USGS bucket |
+| G6 | **Orientation-aware** couplings | Structure-tensor alignment factor on spatial edges |
+| G7 | Never commit the dataset; small cited figures are allowed in reports | `data/` git-ignored; `results/figures/gully_examples.png` |
+| G9 | Evaluate **both** ways: location-level now, pixel-level once annotated | `qws.gully.annotate`, export script |
+| G10 | **Native 128 px** grid (the images are 128 × 128, not 64 × 64) | 98,304 sites per location |
+
+### Implementation decisions
+
+### G5. Hydrology implemented in-house (numba)
+- **Context:** `pysheds` 0.5 calls `np.in1d`, which was removed in NumPy 2.x.
+- **Alternatives:** monkey-patching NumPy (rejected: global side effects); pinning an old NumPy (rejected:
+  breaks other dependencies).
+- **Decision:** priority-flood filling with ε, D8 and accumulation in about 80 lines of numba, verified on
+  terrain with known answers.
+
+### G8. Two-stage learning for the gully model
+- **Context:** the first attempt, sampling-based structured training with rejection-based MIL, produced empty
+  MAP masks (b ≈ −4) and rejected every chain in up to a third of the constraint checks. Symmetric potentials
+  could not represent LFs that vote −1 on half of all pixels.
+- **Decision:**
+  - stage 1 is an exact independent class-conditional label model with exact clamps and the exact closed-form
+    MIL marginal p_i / (1 − Π_j(1 − p_j));
+  - stage 2 is the structured posterior, with β and τ selected by cross-validation.
+
+  Sampling-based structured training stays available (`GullyConfig.epochs`), but is off by default.
+
+### D25. Vectorized graph-cut construction
+- PyMaxflow's `add_edges` / `add_grid_tedges` replace per-edge Python loops: 98k-site MAP in 0.08 s instead of
+  about 1–2 s. Exactness is still covered by the graph cut = enumeration tests.
+
+### D26. Gibbs at scale: memoized graph colouring and int8 persistent chains
+- **Colouring** is memoized by (n, hash of the edge list). Every gully location shares one structure, so one
+  colouring serves all 621.
+- **Persistent chains** are stored as int8 (8× less memory than float64), which matters for hundreds of
+  98k-site chains.
+
+### D27. Shared edge structure; float32 stage-1 algebra
+- The 470,540-edge list is built once per (T, H, W), shared read-only (int32), and only the weights (float32)
+  differ per location.
+- Stage 1 keeps the large products in float32. Mixing float32 with float64 made NumPy copy the whole 30M-row
+  vote matrix on every iteration. Constant column sums are computed once. Together, about 7× faster.
+- The gradient matches the float64 reference to float32 precision (test tolerance 1e-4 relative).
+
+### D28. Model selection by grouped cross-validation on dev only
+- **Context:** in a preliminary run, some LFs looked harmful on test, and the dev and test regions differ
+  strongly. Choosing the LF set from test numbers would leak test information.
+- **Decision:** 3-fold cross-validation within dev, grouped by geographic cluster, selects the LF set, β and τ.
+  Test labels are used once, for the final evaluation.
+
+### D29. LF-set variants are column subsets of one cached vote matrix
+- All LFs are computed once and cached per location. Ablations ("core" LFs, imagery-only) select columns, so no
+  LF is recomputed.
+
+### D30. Location score: largest connected EG component
+- **Alternatives:** total EG fraction, marginal mass, top-k marginals.
+- **Rationale:** an EG is a long connected structure, so one long component is stronger evidence than many
+  scattered pixels. All alternatives are reported alongside.
+
+### D31. Degenerate ablations are reported as such
+- When a variant's MAP is empty at every location, its AUC is exactly 0.5 because all scores tie. Report 12 shows
+  the fraction of locations with a non-empty MAP next to every ablation, so this is not mistaken for chance-level
+  segmentation.

@@ -21,6 +21,7 @@ problem run on quantum annealers and on gate-based quantum hardware.
 | 08 | [Implementation roadmap](08-roadmap.md) | Work packages, status, and what needs real QPU access |
 | 09 | [Implementation notes](09-implementation-notes.md) | How every part is implemented: formulas, conventions, algorithms, numerical choices, tests |
 | 10 | [Decision log](10-decision-log.md) | Every owner and implementation decision with alternatives and rationale |
+| 11 | [Ephemeral-gully detection](11-gully-detection.md) | Weak segmentation of ephemeral gullies on the ViGIR NAIP dataset with USGS 3DEP terrain |
 | — | [Open questions](open-questions.md) | Decisions that are still open |
 | — | [Paper draft](paper-draft.md) | Theory-only short paper: Ising reductions, learning theorem, sampler-fidelity analysis |
 

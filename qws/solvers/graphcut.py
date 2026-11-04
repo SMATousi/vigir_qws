@@ -25,22 +25,21 @@ def solve_submodular_qubo(linear: np.ndarray, edges: np.ndarray, quadratic: np.n
     n = linear.shape[0]
     unary = np.asarray(linear, dtype=float).copy()
     g = maxflow.Graph[float]()
-    nodes = g.add_nodes(n)
-    # b x_i x_k = b x_i + (-b) x_i (1 - x_k), with -b >= 0 paid when x_i = 1, x_k = 0
-    for (i, k), b in zip(edges, quadratic):
-        if b == 0:
-            continue
-        unary[i] += b
-        g.add_edge(nodes[k], nodes[i], -b, 0.0)
-    # x_i = 1 <=> node on the sink side. tedge(i, cap_source, cap_sink):
-    # cap_source is paid if i ends on the sink side, cap_sink if on the source side.
-    for i, a in enumerate(unary):
-        if a >= 0:
-            g.add_tedge(nodes[i], a, 0.0)
-        else:
-            g.add_tedge(nodes[i], 0.0, -a)
+    nodes = g.add_grid_nodes((n,))
+    edges = np.asarray(edges).reshape(-1, 2)
+    quad = np.asarray(quadratic, dtype=float)
+    nz = quad != 0
+    i, k, b = edges[nz, 0], edges[nz, 1], quad[nz]
+    # b x_i x_k = b x_i + (-b) x_i (1 - x_k), with -b >= 0 paid when x_i = 1, x_k = 0:
+    # unary b on x_i, plus a directed edge k -> i of capacity -b (vectorized)
+    np.add.at(unary, i, b)
+    if b.size:
+        g.add_edges(nodes[k], nodes[i], -b, np.zeros_like(b))
+    # x_i = 1 <=> node on the sink side. Terminal capacities: source cap is paid on the sink
+    # side (cost a >= 0 for x = 1); sink cap is paid on the source side (cost -a for x = 0).
+    g.add_grid_tedges(nodes, np.maximum(unary, 0.0), np.maximum(-unary, 0.0))
     g.maxflow()
-    return np.array([g.get_segment(nodes[i]) for i in range(n)], dtype=np.int8)
+    return g.get_grid_segments(nodes).astype(np.int8)
 
 
 class GraphCutSolver(Solver):

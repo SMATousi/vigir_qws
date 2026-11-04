@@ -55,17 +55,63 @@ class Trainer:
         self.solver = solver
         self.config = config or TrainConfig()
         self.rng = np.random.default_rng(self.config.seed)
+        self.clamps: dict[int, np.ndarray] = {}
+        self.min_positive: dict[int, int] = {}
+        self.constraint_stats: dict = {"checked": 0, "all_rejected": 0, "accepted_fraction": []}
 
     # ------------------------------------------------------------------ moments
     def _post_moments(self, params: LabelModelParams, batch: Data, idx: Sequence[int]) -> list[PosteriorMoments]:
-        problems = [posterior_ising(params, lfo, sites, chain_key=("post", int(i)))
-                    for i, (lfo, sites) in zip(idx, batch)]
-        sets = self.solver.sample(problems, self.config.num_samples)
-        out = []
-        for p, ss, (_, sites) in zip(problems, sets, batch):
+        """Posterior moments per image, honouring optional constraints (doc 11 §6):
+
+        * ``clamps[i]`` (values in {-1, 0, +1}, 0 = free): clamped sites are fixed. Fully
+          clamped items get exact moments without sampling. Partially clamped items are
+          sampled on the exact conditional Ising model of their free sites.
+        * ``min_positive[i] = k``: samples with fewer than k sites at +1 are rejected (exact
+          conditioning on "at least k positives"). If every sample is rejected, the samples
+          with the most positives are kept, and the event is counted in ``constraint_stats``.
+        """
+        from ..ising import condition
+
+        out: list[PosteriorMoments | None] = [None] * len(batch)
+        problems, owners, conds = [], [], []
+        for pos, (i, (lfo, sites)) in enumerate(zip(idx, batch)):
+            p = posterior_ising(params, lfo, sites, chain_key=("post", int(i)))
+            clamp = self.clamps.get(int(i))
+            if clamp is not None and np.all(clamp != 0):
+                c = clamp.astype(float)
+                out[pos] = PosteriorMoments(c, c[sites.edges[:, 0]] * c[sites.edges[:, 1]])
+                continue
+            if clamp is not None and np.any(clamp != 0):
+                fixed = np.flatnonzero(clamp != 0)
+                cond = condition(p, fixed, clamp[fixed])
+                sub = cond.problem
+                sub = type(sub)(sub.h, sub.edges, sub.J, sub.offset, sub.kind, {**sub.meta, "chain_key": ("post", int(i))})
+                problems.append(sub)
+                conds.append(cond)
+            else:
+                problems.append(p)
+                conds.append(None)
+            owners.append(pos)
+        sets = self.solver.sample(problems, self.config.num_samples) if problems else []
+        for pos, p, ss, cond in zip(owners, problems, sets, conds):
             ss = self._polish(p, ss)
-            out.append(PosteriorMoments(ss.mean(), ss.edge_corr(sites.edges)))
-        return out
+            full = cond.lift(ss.samples, batch[pos][1].n) if cond is not None else ss.samples
+            counts = ss.counts
+            k = self.min_positive.get(int(idx[pos]))
+            if k:
+                npos = (full > 0).sum(axis=1)
+                ok = npos >= k
+                self.constraint_stats["checked"] += 1
+                if not ok.any():
+                    self.constraint_stats["all_rejected"] += 1
+                    ok = npos == npos.max()
+                self.constraint_stats["accepted_fraction"].append(float(counts[ok].sum() / counts.sum()))
+                full, counts = full[ok], counts[ok]
+            w = counts / counts.sum()
+            fs = full.astype(float)
+            e = batch[pos][1].edges
+            out[pos] = PosteriorMoments(w @ fs, w @ (fs[:, e[:, 0]] * fs[:, e[:, 1]]))
+        return out  # type: ignore[return-value]
 
     def _prior_moments(self, params: LabelModelParams, batch: Data) -> list[PosteriorMoments]:
         """Moments of the prior Ising model. It depends only on the graph (and parameters),
@@ -93,9 +139,15 @@ class Trainer:
         return SampleSet.from_samples(p, polished, info={**ss.info, "polish_sweeps": self.config.polish_sweeps})
 
     # ------------------------------------------------------------------ fit
-    def fit(self, data: Data, params: LabelModelParams | None = None) -> TrainResult:
+    def fit(self, data: Data, params: LabelModelParams | None = None, clamps: dict[int, np.ndarray] | None = None,
+            min_positive: dict[int, int] | None = None) -> TrainResult:
+        """Fit on ``data``. ``clamps`` and ``min_positive`` are keyed by item index; see
+        ``_post_moments`` (used for location-level labels in the gully branch, doc 11 §6)."""
         cfg = self.config
         data = list(data)
+        self.clamps = clamps or {}
+        self.min_positive = min_positive or {}
+        self.constraint_stats = {"checked": 0, "all_rejected": 0, "accepted_fraction": []}
         if params is None:
             params = warm_start(data, iters=cfg.warm_start_iters, beta=cfg.beta)
         if cfg.mode == "em" and (params.cliques or cfg.class_conditional or cfg.learn_b or cfg.learn_beta):

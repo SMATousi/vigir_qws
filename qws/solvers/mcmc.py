@@ -74,14 +74,14 @@ class GibbsSampler(Solver):
                 states = np.atleast_2d(init).astype(float).copy()
             elif self.persistent and key is not None and key in self._chains \
                     and self._chains[key].shape == (num_samples, p.n):
-                states = self._chains[key]
+                states = self._chains[key].astype(float)
             else:
                 states = self.rng.choice([-1.0, 1.0], size=(num_samples, p.n))
             k = _Kernel(p)
             for _ in range(sweeps):
                 k.sweep(states, beta, self.rng)
             if self.persistent and key is not None:
-                self._chains[key] = states
+                self._chains[key] = states.astype(np.int8)  # spins fit in int8: 8x less memory
             out.append(SampleSet.from_samples(p, states, info={"solver": self.name, "sweeps": sweeps,
                                                                "beta": beta, "colors": len(k.classes)}))
         return out

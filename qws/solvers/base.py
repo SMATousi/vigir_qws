@@ -75,12 +75,29 @@ class Solver(ABC):
         raise UnsupportedProblem(f"{self.name} does not support sample")
 
 
+_COLORING_CACHE: dict[tuple, list[np.ndarray]] = {}
+
+
 def greedy_coloring(problem: IsingProblem) -> list[np.ndarray]:
     """Partition variables into independent sets (no edge inside a class).
 
     Spins in one class are conditionally independent given the rest, so a whole class
     can be updated in parallel without changing the Gibbs kernel's invariant law.
+    Memoized by graph structure (n and a hash of the edge list): training revisits the
+    same graphs every step, and the greedy pass is O(n) Python work.
     """
+    import hashlib
+
+    key = (problem.n, hashlib.sha1(np.ascontiguousarray(problem.edges).tobytes()).hexdigest())
+    if key in _COLORING_CACHE:
+        return _COLORING_CACHE[key]
+    if len(_COLORING_CACHE) > 4096:
+        _COLORING_CACHE.clear()
+    _COLORING_CACHE[key] = classes = _greedy_coloring(problem)
+    return classes
+
+
+def _greedy_coloring(problem: IsingProblem) -> list[np.ndarray]:
     W = problem.coupling_matrix
     colors = -np.ones(problem.n, dtype=np.int64)
     order = np.argsort(-np.diff(W.indptr))  # largest degree first
