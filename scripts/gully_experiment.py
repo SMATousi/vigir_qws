@@ -310,8 +310,11 @@ highest-scoring negative test locations.
 
 - **Model selection noise.** The mean fold-to-fold standard deviation of the CV AUC is {fold_sd:.3f}. Configurations
   whose CV AUCs differ by less than that are not reliably distinguished. In particular, the effect of β (spatial
-  smoothing) on *location detection* is not resolved by this data. Spatial and temporal couplings change the
-  masks, connecting gullies across gaps and years, more than they change location-level ranking.
+  smoothing) on *location detection* is not resolved by this data. Its effect on mask shape (continuity across
+  gaps and years) can only be measured against pixel annotations.
+- **One dev fold is below chance.** Every configuration scores an AUC between 0.26 and 0.32 on one of the three dev folds.
+  In that geographic group, the LF evidence ranks negative locations above positive ones. This is the main source
+  of the fold-to-fold spread, and the clearest sign that the LFs do not transfer equally across landscapes.
 - **The multiple-instance constraint is vacuous at this scale.** Under stage 1, a positive dev location is expected
   to contain a median of {mil_diag['median_expected_eg_pixels']:.0f} EG pixels, and P(no EG pixel at all) ≤
   10^{mil_diag['max_log10_p_none']:.0f}. The constraint "at least one EG pixel among 98,304" therefore barely
@@ -320,6 +323,11 @@ highest-scoring negative test locations.
   likelihood (open question Q20).
 - The regions differ markedly: training-free single-LF AUCs are much lower on dev than on test. Cross-validation
   numbers on dev are therefore lower than the test numbers, and they should not be compared directly.
+- **What the examples show** (visual inspection, not a metric).
+  - The top positives are channels along the DEM flow path. Some of them persist in all six years and look like
+    grassed waterways rather than bare ephemeral gullies, which location labels cannot tell apart.
+  - The highest-scoring negative (tile 493) has one blank (all-black, no-data) acquisition, and the model marks
+    pixels in it. No-data years should be masked out before LFs vote.
 - **Pixel-level quality is not measured yet.** Pixel IoU and ±2 px tolerant precision and recall are computed
   automatically once annotations exist (`qws.gully.annotate`; `scripts/gully_export_annotation.py`).
 """

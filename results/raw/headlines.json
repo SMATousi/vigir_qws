@@ -53,5 +53,10 @@
     "title": "11 \u2014 Multi-class",
     "question": "Does the K-class model work, and what does one-hot encoding cost?",
     "headline": "Accuracy 0.927 (structured) vs. 0.708 (independent) / 0.718 (majority); one-hot QUBO needs more reads (17/20 \u2192 20/20 optima with 20 \u2192 100 reads)"
+  },
+  "12-gully.md": {
+    "title": "12 \u2014 Ephemeral gullies",
+    "question": "Can weak LFs + location labels segment EGs and detect EG locations?",
+    "headline": "Test location AUC 0.825 (structured largest component) vs. 0.825 (independent) / 0.723 (majority) / 0.684 (terrain alone); model chosen by grouped CV on dev; no pixel GT yet"
   }
 }

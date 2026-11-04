@@ -14,7 +14,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 
 ## Environment (last run)
 
-- Generated: 2026-11-03 07:04 UTC
+- Generated: 2026-11-04 22:13 UTC
 - Python 3.13.16 on x86_64 (Linux)
 - Packages: numpy 2.5.4, scipy 1.18.1, scikit-image 0.26.0, PyMaxflow 1.3.2, dimod 0.12.23, dwave-neal 0.6.0, dwave-system 1.36.0, minorminer 0.2.22, qiskit 2.6.1, qiskit-aer 0.18.2, qiskit-ibm-runtime 0.51.0, torch 2.15.0
 - Hardware: CPU only. **No real QPU was used.** `anneal_sim` is D-Wave Ocean's classical `SimulatedAnnealingSampler`; `anneal_mock` is `MockDWaveSampler` with a Pegasus topology and a fixed-temperature simulated-annealing substitute.
@@ -34,6 +34,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 | [09 — Downstream U-Net](09-downstream-unet.md) | Do better weak labels give a better segmentation network? | Training-label IoU 0.80 (structured) vs. 0.68 / 0.51; U-Net test IoU 0.75 / 0.75 / 0.39 (GT-trained 0.73): network-limited on this small synthetic set |
 | [10 — QPBO](10-qpbo.md) | How much of a frustrated posterior is decided exactly by roof duality? | Realistic posteriors: 100% labeled (MAP solved exactly by max-flow); weak LFs at θᴾ = 2: 60%; field-free spin glass: 0%; persistency verified in every case |
 | [11 — Multi-class](11-multiclass.md) | Does the K-class model work, and what does one-hot encoding cost? | Accuracy 0.927 (structured) vs. 0.708 (independent) / 0.718 (majority); one-hot QUBO needs more reads (17/20 → 20/20 optima with 20 → 100 reads) |
+| [12 — Ephemeral gullies](12-gully.md) | Can weak LFs + location labels segment EGs and detect EG locations? | Test location AUC 0.825 (structured largest component) vs. 0.825 (independent) / 0.723 (majority) / 0.684 (terrain alone); model chosen by grouped CV on dev; no pixel GT yet |
 
 ## Scope and caveats
 
