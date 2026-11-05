@@ -15,7 +15,7 @@ measure:
 * D-Wave resources: the QPBO remainder, embedded on a mock Advantage (Pegasus P16) graph: logical variables,
   physical qubits, longest chain.
 
-Besides the learned parameters, three scaled settings show how this changes if the pairwise LF were stronger or
+Besides the learned parameters, five scaled settings show how this changes if the pairwise LF were stronger or
 the unary LFs weaker.
 """
 
@@ -161,7 +161,7 @@ The full label model (unary LFs, the pairwise colour-contrast LF and β = 0.5) l
 images (seed 0; the setting of report 13). Its pairwise LF votes "different" across strong colour edges. With a
 positive learned θᴾ = {float(params.thetaP[0]):.2f}, each such vote adds a negative coupling, so the posteriors are
 frustrated and graph cut does not apply. This report asks what these real frustrated posteriors require from a MAP
-solver. Besides the learned parameters, three scaled settings show the effect of a stronger pairwise LF or weaker
+solver. Besides the learned parameters, five scaled settings show the effect of a stronger pairwise LF or weaker
 unary LFs.
 
 ## Frustration, roof duality and solver gaps (means over images)
@@ -188,7 +188,27 @@ the relevant size once QPBO stops deciding variables.
 
 ## Observations
 
-OBSERVATIONS_PLACEHOLDER
+- **Real frustration is easy.** With the learned parameters, 10% of couplings are negative and 14% of basis
+  cycles are frustrated. Yet roof duality labels 99% of the variables, every variable in 97 of 100 images, and
+  the MAP is certified optimal in 98 of 100 (QPBO alone, or QPBO plus enumeration of a remainder of at most 20
+  variables). Short annealing (300 sweeps) reaches the reference energy on all 100 images. The unary evidence
+  anchors the posterior, as in report 10.
+- **Hardness needs weak unaries and strong pairwise votes together.** Certified images drop to 86/100 at unary
+  ×0.5 with pairwise ×3, to 58/100 at unary ×0.25 with pairwise ×10, and to 0 with no unary LFs (a field-free
+  frustrated model on the superpixel graph). Short annealing reaches the reference on 86%, 12% and 14% of these
+  images, though its mean gap stays below 1%. Greedy descent is 0.4–8% above the reference on average.
+- **These hard settings are also worse segmentations.** IoU falls from 0.585 (learned) to 0.465 and 0.316 in the
+  hardest settings. That fits report 16: the generic pairwise LF lowers IoU on Pet. On these real images, a
+  stronger "different" LF does not create hard problems worth solving.
+- **Hardware size is not the obstacle.** A whole image's posterior (about 122 variables) embeds in about 198
+  physical qubits of the mock Advantage graph, with chains of at most 4, which is about 3.5% of a Pegasus P16
+  chip. With the learned parameters, the QPBO remainder sent to the QPU would have only a few variables.
+- **Caveat.** Where an image is not certified, the reference is the best energy found by long annealing and
+  QPBO + annealing, not a proven optimum. The gaps are therefore lower bounds on the true gaps.
+- **Consequence.** For binary segmentation with a realistic pairwise LF, MAP is solved classically: QPBO, and
+  annealing for a small remainder. Quantum resources remain relevant for **sampling** under strong coupling
+  (report 03), for multi-class (Potts) MAP, which is NP-hard even without frustration (report 11), and for
+  models whose LFs are genuinely weak relative to their pairwise terms.
 """
     write("17-frustration-pet.md", "17 — Frustrated posteriors on real images", body)
     lr = rows[0]

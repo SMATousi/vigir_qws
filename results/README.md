@@ -14,7 +14,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 
 ## Environment (last run)
 
-- Generated: 2026-11-05 05:39 UTC
+- Generated: 2026-11-05 06:54 UTC
 - Python 3.13.16 on x86_64 (Linux)
 - Packages: numpy 2.5.4, scipy 1.18.1, scikit-image 0.26.0, PyMaxflow 1.3.2, dimod 0.12.23, dwave-neal 0.6.0, dwave-system 1.36.0, minorminer 0.2.22, qiskit 2.6.1, qiskit-aer 0.18.2, qiskit-ibm-runtime 0.51.0, torch 2.15.0
 - Hardware: CPU only. **No real QPU was used.** `anneal_sim` is D-Wave Ocean's classical `SimulatedAnnealingSampler`; `anneal_mock` is `MockDWaveSampler` with a Pegasus topology and a fixed-temperature simulated-annealing substitute.
@@ -39,6 +39,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 | [14 — Downstream U-Net on real Pet](14-pet-downstream.md) | Do better weak labels give a better network on real images? | Training-label IoU 0.63 (structured) vs. 0.58 / 0.50; U-Net test IoU 0.62 / 0.62 / 0.49 (GT-trained 0.74) |
 | [15 — Sampler checks](15-theory-sampler-checks.md) | How does sampler temperature bias learning, and does 2·TV bound moment errors? | θ/θ* at β_s = 1: 0.91 / 0.92 (independent / coupled); with MAP labels: 1.42 / 0.99; moment error ≤ 2·TV everywhere (max ratio 1.00) |
 | [16 — Joint learning vs. learn-then-smooth](16-structure-ablation.md) | Does learning with the spatial prior beat learning independently and smoothing afterwards? | Pet, β = 0.5: independent 0.576 ± 0.016, learn-then-smooth 0.632 ± 0.011, joint (unary) 0.631 ± 0.011, joint (full) 0.616 ± 0.014 |
+| [17 — Frustrated posteriors (Pet)](17-frustration-pet.md) | How hard are real frustrated posteriors for MAP, and what would the QPU get? | Learned model: 10% negative couplings, 14% frustrated cycles; QPBO labels 99% of variables and certifies 98/100 images |
 
 ## Scope and caveats
 

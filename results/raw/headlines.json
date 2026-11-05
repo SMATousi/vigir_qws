@@ -78,5 +78,10 @@
     "title": "16 \u2014 Joint learning vs. learn-then-smooth",
     "question": "Does learning with the spatial prior beat learning independently and smoothing afterwards?",
     "headline": "Pet, \u03b2 = 0.5: independent 0.576 \u00b1 0.016, learn-then-smooth 0.632 \u00b1 0.011, joint (unary) 0.631 \u00b1 0.011, joint (full) 0.616 \u00b1 0.014"
+  },
+  "17-frustration-pet.md": {
+    "title": "17 \u2014 Frustrated posteriors (Pet)",
+    "question": "How hard are real frustrated posteriors for MAP, and what would the QPU get?",
+    "headline": "Learned model: 10% negative couplings, 14% frustrated cycles; QPBO labels 99% of variables and certifies 98/100 images"
   }
 }
