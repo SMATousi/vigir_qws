@@ -73,5 +73,10 @@
     "title": "15 \u2014 Sampler checks",
     "question": "How does sampler temperature bias learning, and does 2\u00b7TV bound moment errors?",
     "headline": "\u03b8/\u03b8* at \u03b2_s = 1: 0.91 / 0.92 (independent / coupled); with MAP labels: 1.42 / 0.99; moment error \u2264 2\u00b7TV everywhere (max ratio 1.00)"
+  },
+  "16-structure-ablation.md": {
+    "title": "16 \u2014 Joint learning vs. learn-then-smooth",
+    "question": "Does learning with the spatial prior beat learning independently and smoothing afterwards?",
+    "headline": "Pet, \u03b2 = 0.5: independent 0.576 \u00b1 0.016, learn-then-smooth 0.632 \u00b1 0.011, joint (unary) 0.631 \u00b1 0.011, joint (full) 0.616 \u00b1 0.014"
   }
 }

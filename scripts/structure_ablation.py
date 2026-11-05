@@ -160,7 +160,29 @@ trimap boundary pixels excluded. Seeds {pet['seeds']}.
 
 ## Observations
 
-OBSERVATIONS_PLACEHOLDER
+- **Smoothing at inference is where the gain comes from.** Learn-then-smooth beats the independent model
+  by 0.11–0.22 IoU on the synthetic data, 0.21–0.42 with weak LFs, and 0.050–0.067 on Pet.
+- **Joint learning of the unary LFs adds nothing on top.** Joint (unary) is never more than 0.002 IoU better
+  than learn-then-smooth, and it is worse at small β (by up to 0.059 with weak LFs at β = 0.25). It wins 8 of
+  39 runs, all at β ≥ 0.5.
+- **Why.** If the LFs are conditionally independent given each site's label, the independent model maximizes
+  the sum of per-site marginal log-likelihoods. That is a composite likelihood, which estimates θ consistently
+  whatever the spatial dependence between sites, provided the per-site model (including the class prior) is
+  right. Joint learning can then only improve efficiency, and it adds a risk: when β is wrong, the
+  posterior moments are biased, and so is θ. That matches the accuracy tables. Joint (unary) estimates the
+  implied accuracies better than the independent model only at β = 1 with weak LFs (error 0.012 against
+  0.028), and worse at β = 0.25 (0.041 against 0.028).
+- **The pairwise LF is what needs structured learning.** Its parameter cannot be learned without the
+  structured posterior. On synthetic data, where its votes follow the model, it adds 0.015–0.088 IoU
+  (0.018–0.062 with weak LFs), and the full model also estimates the unary accuracies best (error
+  0.009–0.016). On Pet, the generic colour-contrast pairwise LF **lowers** IoU by 0.015–0.020.
+- **Best real-image result.** On Pet the best variant is learn-then-smooth with β = 1 (IoU 0.643). That is
+  above the full model of report 13 (0.616), which used the pairwise LF and β = 0.5.
+- **Consequence for the quantum role.** For unary LFs that are conditionally independent given the label,
+  learning needs no structured sampling: the independent model is in closed form, and MAP with β ≥ 0 is a
+  graph cut. Structured sampling, the paper's target for annealers, is needed when the model has terms that
+  only the structured posterior identifies: pairwise LFs, learned β and b, LF dependencies, and
+  location-level constraints such as those of report 12.
 """
     write("16-structure-ablation.md", "16 — Joint structured learning vs. learn-then-smooth", body)
     p05 = {r[0]: r for r in pet["rows"]}["0.5"]
