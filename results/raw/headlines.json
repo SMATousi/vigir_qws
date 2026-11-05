@@ -68,5 +68,10 @@
     "title": "14 \u2014 Downstream U-Net on real Pet",
     "question": "Do better weak labels give a better network on real images?",
     "headline": "Training-label IoU 0.63 (structured) vs. 0.58 / 0.50; U-Net test IoU 0.62 / 0.62 / 0.49 (GT-trained 0.74)"
+  },
+  "15-theory-sampler-checks.md": {
+    "title": "15 \u2014 Sampler checks",
+    "question": "How does sampler temperature bias learning, and does 2\u00b7TV bound moment errors?",
+    "headline": "\u03b8/\u03b8* at \u03b2_s = 1: 0.91 / 0.92 (independent / coupled); with MAP labels: 1.42 / 0.99; moment error \u2264 2\u00b7TV everywhere (max ratio 1.00)"
   }
 }

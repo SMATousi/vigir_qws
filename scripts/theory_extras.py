@@ -128,7 +128,18 @@ descent, which is hard EM. Seeds: {cold['seeds']}.
 - **Coupled sites.** θ / θ* moves from {r[(cpl, '0.75')][2]:.2f} (β_s = 0.75) to {r[(cpl, '2')][2]:.2f}
   (β_s = 2) and {r[(cpl, 'MAP (hard EM)')][2]:.2f} (MAP).
 
-OBSERVATIONS_PLACEHOLDER
+- **Independent sites: the predicted direction, monotone.** Colder sampling inflates θ steadily, up to about
+  1.4 × θ* at β_s = 4 and with MAP labels, and the implied accuracies are then overestimated by about 0.06. A
+  hotter sampler (β_s = 0.75) is worse still: learning collapses to the trivial fixed point θ ≈ 0.
+- **Coupled sites: small and not monotone.** Colder sampling changes θ by at most 3% (1.03 × θ* at β_s = 1.5–2,
+  0.98 at β_s = 4 and with MAP labels), and the implied-accuracy error stays at or below 0.016 for every
+  β_s ≥ 1. A likely reason is that near the critical point the coupled posterior is already sharp, so cooling it
+  further changes the moments little. The hotter sampler still deflates θ (0.63 × θ*).
+- **At β_s = 1** θ is slightly underestimated (0.91–0.92 × θ*): 12 images and 15 epochs from the warm start.
+- **Reading.** The proposition's statements hold: a sampler at β_s returns the posterior of the model at β_s·Θ.
+  What that does to the learned parameters depends on the model. Without coupling, cold samplers inflate them as
+  the proposition's title says; with coupling the effect can be small and change sign. Too-hot samplers are at
+  least as harmful as too-cold ones, which again argues for calibrating the temperature rather than lowering it.
 
 ## 2. The sampler-bias term bounds the observed moment errors
 
@@ -140,9 +151,10 @@ problems of that row; the bound holds if it is ≤ 1.
 {table(["regime", "sampler", "mean TV", "mean max moment error", "max ratio to 2·TV"], bias['rows'])}
 
 Over all {sum(1 for _ in bias['rows'])} sampler × regime rows, the largest ratio is **{bias['worst']:.2f}** and the
-median ratio over individual problems is {bias['median']:.2f}. The bound holds everywhere. It is attained only
-when a sampler puts nearly all its mass on states the target rarely visits; for good samplers the moment errors
-are far below it.
+median ratio over individual problems is {bias['median']:.2f}. The bound holds everywhere, and it is tight in the
+strong-coupling regime for every sampler, including the exact one. There the target concentrates on two
+mirror-image basins, and any misallocation of mass between them shifts every spin at once, so the largest moment
+error equals 2·TV exactly. In the weak regime the errors are about 0.4–0.8 of the bound.
 """
     write("15-theory-sampler-checks.md", "15 — Sampler temperature and the sampler-bias term", body)
     register({"15-theory-sampler-checks.md": {

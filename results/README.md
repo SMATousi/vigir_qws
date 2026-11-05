@@ -14,7 +14,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 
 ## Environment (last run)
 
-- Generated: 2026-11-04 23:37 UTC
+- Generated: 2026-11-05 01:11 UTC
 - Python 3.13.16 on x86_64 (Linux)
 - Packages: numpy 2.5.4, scipy 1.18.1, scikit-image 0.26.0, PyMaxflow 1.3.2, dimod 0.12.23, dwave-neal 0.6.0, dwave-system 1.36.0, minorminer 0.2.22, qiskit 2.6.1, qiskit-aer 0.18.2, qiskit-ibm-runtime 0.51.0, torch 2.15.0
 - Hardware: CPU only. **No real QPU was used.** `anneal_sim` is D-Wave Ocean's classical `SimulatedAnnealingSampler`; `anneal_mock` is `MockDWaveSampler` with a Pegasus topology and a fixed-temperature simulated-annealing substitute.
@@ -37,6 +37,7 @@ Raw numbers are in [`raw/`](raw/). Design decisions and implementation details b
 | [12 — Ephemeral gullies](12-gully.md) | Can weak LFs + location labels segment EGs and detect EG locations? | Test location AUC 0.825 (structured largest component) vs. 0.825 (independent) / 0.723 (majority) / 0.684 (terrain alone); model chosen by grouped CV on dev; no pixel GT yet |
 | [13 — Real Oxford-IIIT Pet](13-pet-pipeline.md) | Does the structured label model help on real photographs? | 200 images × 3 seeds: structured IoU 0.616 vs. 0.576 (independent), 0.494 (majority); superpixel oracle 0.963 |
 | [14 — Downstream U-Net on real Pet](14-pet-downstream.md) | Do better weak labels give a better network on real images? | Training-label IoU 0.63 (structured) vs. 0.58 / 0.50; U-Net test IoU 0.62 / 0.62 / 0.49 (GT-trained 0.74) |
+| [15 — Sampler checks](15-theory-sampler-checks.md) | How does sampler temperature bias learning, and does 2·TV bound moment errors? | θ/θ* at β_s = 1: 0.91 / 0.92 (independent / coupled); with MAP labels: 1.42 / 0.99; moment error ≤ 2·TV everywhere (max ratio 1.00) |
 
 ## Scope and caveats
 
